@@ -1,0 +1,42 @@
+# CODEOWNERS
+
+## Code Owners
+
+### Global Ownership
+
+# If you want @wizenheimer to be the owner of the entire repository, use this line.
+* @wizenheimer
+
+### Specific Ownership
+
+# If you want to specify owners for different parts of the repository, uncomment and edit the following lines.
+
+# Ownership for the entire 'docs' directory
+# /docs/ @wizenheimer
+
+# Ownership for the 'src' directory
+# /src/ @wizenheimer
+
+# Ownership for all files in the 'tests' directory
+# /tests/ @wizenheimer
+
+# Ownership for specific file types
+# *.js @wizenheimer   # For all JavaScript files
+# *.py @wizenheimer   # For all Python files
+
+# Ownership for specific files
+# /config/settings.yml @wizenheimer
+# /README.md @wizenheimer
+
+# Ownership for specific directories with subdirectories
+# /project/subdir/ @wizenheimer
+
+# Ownership for files in a specific directory, but not its subdirectories
+# /project/subdir/* @wizenheimer
+
+# Multiple owners for a directory or file
+# /src/ @wizenheimer @anotheruser
+
+# Example for custom rules using wildcards
+# *docs/*.md @wizenheimer   # All markdown files in the 'docs' directory
+# /src/**/* @wizenheimer    # All files in the 'src' directory and its subdirectories
