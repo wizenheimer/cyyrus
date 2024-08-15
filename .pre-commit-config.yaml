@@ -1,0 +1,71 @@
+repos:
+  # pre-commit hooks for testing the files
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: "v4.6.0"
+    hooks:
+      - id: check-added-large-files
+      - id: check-toml
+      - id: check-yaml
+      - id: check-json
+      - id: check-xml
+      - id: end-of-file-fixer
+        exclude: \.json$
+        files: \.py$
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v3.29.0
+    hooks:
+      - id: commitizen
+        stages: [commit-msg]
+  # for formatting
+  - repo: https://github.com/psf/black
+    rev: 24.8.0
+    hooks:
+      - id: black
+        args: ["--line-length=100"]
+        language_version: python3
+  # for linting & style checks
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.7
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+  # for keeping dependencies up-to-date
+  - repo: https://github.com/jazzband/pip-tools
+    rev: 7.4.1
+    hooks:
+      - id: pip-compile
+        name: pip-compile requirements.txt
+        args:
+          [
+            -q,
+            --allow-unsafe,
+            --resolver=backtracking,
+            --generate-hashes,
+            requirements.in,
+          ]
+        files: ^requirements\.(in|txt)$
+      - id: pip-compile
+        name: pip-compile constraints.txt
+        args:
+          [
+            -q,
+            --allow-unsafe,
+            --resolver=backtracking,
+            --strip-extras,
+            --output-file=constraints.txt,
+            requirements.in,
+          ]
+        files: ^requirements\.in|constraints\.txt$
+      - id: pip-compile
+        name: pip-compile requirements-dev.txt
+        args:
+          [
+            -q,
+            --allow-unsafe,
+            --resolver=backtracking,
+            --generate-hashes,
+            requirements-dev.in,
+          ]
+        files: ^requirements-dev\.(in|txt)$
