@@ -1,0 +1,35 @@
+[project]
+name = "cyyrus"
+version = "0.0.1"
+
+[tool.black]
+line-length = 100
+target-version = ['py38']
+
+[tool.pyright]
+reportMissingTypeArgument = true # Report generic classes used without type arguments
+strictListInference = true # Use union types when inferring types of lists elements, instead of Any
+exclude = [
+    "**/node_modules",
+    "**/__pycache__",
+    "experimental",    # Exclude experimental directory
+    "src/typestubs",
+]
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+version = "0.0.1"
+tag_format = "$version"
+version_scheme = "semver2"
+version_files = ["setup.py", "src/cyyrus/__version__.py"]
+update_changelog_on_bump = false                          # Changelogs are disabled
+
+[tool.commitizen.change_type_map]
+build = "MAJOR"
+release = "MAJOR"
+
+[tool.commitizen.change_type_order]
+BREAKING = 0
+MAJOR = 1
+MINOR = 2
+PATCH = 3
