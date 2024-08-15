@@ -1,0 +1,29 @@
+name: Version, Release, and Publish
+
+on:
+  push:
+    branches:
+      - development
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+
+  bump-version:
+    needs: test
+    uses: ./.github/workflows/bump-version.yml
+    secrets: inherit
+    permissions:
+      contents: write
+      packages: write
+
+  build:
+    needs: bump-version
+    uses: ./.github/workflows/build.yml
+
+  publish-to-testpypi:
+    needs: build
+    uses: ./.github/workflows/publish-testpypi.yml
+    secrets: inherit
+    permissions:
+      id-token: write

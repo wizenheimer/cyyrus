@@ -1,0 +1,26 @@
+name: Build Distribution
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install -r pip-requirements.txt requirements-dev.txt
+
+      - name: Build distribution
+        run: make build
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: python-package-distributions
+          path: dist/

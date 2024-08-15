@@ -1,0 +1,39 @@
+name: Version, Release, and Publish
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+
+  bump-version:
+    needs: test
+    uses: ./.github/workflows/bump-version.yml
+    secrets: inherit
+    permissions:
+      contents: write
+      packages: write
+
+  # TODO: add linting and formatting here
+  build:
+    needs: bump-version
+    uses: ./.github/workflows/build.yml
+
+  publish-to-pypi:
+    needs: build
+    uses: ./.github/workflows/publish-pypi.yml
+    secrets: inherit
+    permissions:
+      id-token: write
+
+  github-release:
+    needs: publish-to-pypi
+    uses: ./.github/workflows/github-release.yml
+    secrets: inherit
+    permissions:
+      contents: write
+      id-token: write
+      packages: write

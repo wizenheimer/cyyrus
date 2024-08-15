@@ -1,0 +1,23 @@
+name: Test Distribution
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: |
+          pip install -r pip-requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Test distribution
+        run: |
+          pytest tests/* --exitfirst -n auto
