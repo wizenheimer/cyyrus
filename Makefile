@@ -7,7 +7,7 @@
 # Define directory configs
 BASE_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 VENV_DIR := $(BASE_DIR)/.venv
-SRC_DIR := $(BASE_DIR)/src
+SRC_DIR := $(BASE_DIR)/package/python
 DIST_DIR := $(BASE_DIR)/dist
 TEST_DIR := $(BASE_DIR)/tests
 
