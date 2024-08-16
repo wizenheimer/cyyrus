@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 from cyyrus.constants.messages import Messages
 from .base import CyyrusException, CyyrusWarning
 
@@ -24,7 +24,7 @@ class SchemaParsingError(CyyrusException):
     def __init__(
         self,
         message: str = Messages.SCHEMA_COULD_NOT_BE_PARSED,
-        extra_info: Dict[str, str] = None,
+        extra_info: Optional[Dict[str, str]] = None,
     ):
         super().__init__(message, extra_info=extra_info)
 
@@ -60,7 +60,7 @@ class ReferenceTypeMissingError(CyyrusException):
     def __init__(
         self,
         message: str = Messages.REFERENCE_TYPE_MISSING,
-        extra_info: Dict[str, str] = None,
+        extra_info: Optional[Dict[str, str]] = None,
     ):
         super().__init__(
             message,
@@ -76,7 +76,7 @@ class ReferenceTypeNotSupportedError(CyyrusException):
     def __init__(
         self,
         message: str = Messages.REFERENCE_TYPE_NOT_SUPPORTED,
-        extra_info: Dict[str, str] = None,
+        extra_info: Optional[Dict[str, str]] = None,
     ):
         super().__init__(
             message,
@@ -92,7 +92,7 @@ class ReferencePropertiesMissingError(CyyrusException):
     def __init__(
         self,
         message: str = Messages.REFERENCE_PROPERTIES_MISSING,
-        extra_info: Dict[str, str] = None,
+        extra_info: Optional[Dict[str, str]] = None,
     ):
         super().__init__(
             message,
@@ -122,7 +122,7 @@ class DatasetSplitsDontAddUpError(CyyrusWarning):
     def __init__(
         self,
         message: str = Messages.SPLITS_DONT_ADD_UP,
-        extra_info: Dict[str, str] = None,
+        extra_info: Optional[Dict[str, str]] = None,
     ):
         super().__init__(message, extra_info=extra_info)
 
@@ -135,7 +135,7 @@ class DatasetInvalidTagTypesError(CyyrusWarning):
     def __init__(
         self,
         message: str = Messages.INVALID_TAG_TYPES,
-        extra_info: Dict[str, str] = None,
+        extra_info: Optional[Dict[str, str]] = None,
     ):
         super().__init__(message, extra_info=extra_info)
 
@@ -148,7 +148,7 @@ class DatasetInvalidSamplingStrategyError(CyyrusWarning):
     def __init__(
         self,
         message: str = Messages.INVALID_SAMPLING_STRATEGY,
-        extra_info: Dict[str, str] = None,
+        extra_info: Optional[Dict[str, str]] = None,
     ):
         super().__init__(message, extra_info=extra_info)
 
@@ -161,7 +161,7 @@ class DatasetInvalidNullHandlingStrategyError(CyyrusWarning):
     def __init__(
         self,
         message: str = Messages.INVALID_NULL_HANDLING_STRATEGY,
-        extra_info: Dict[str, str] = None,
+        extra_info: Optional[Dict[str, str]] = None,
     ):
         super().__init__(message, extra_info=extra_info)
 
@@ -174,7 +174,7 @@ class DatasetInvalidReferenceHandlingStrategyError(CyyrusWarning):
     def __init__(
         self,
         message: str = Messages.INVALID_REFERENCE_HANDLING_STRATEGY,
-        extra_info: Dict[str, str] = None,
+        extra_info: Optional[Dict[str, str]] = None,
     ):
         super().__init__(
             message,
@@ -190,7 +190,7 @@ class DatasetInvalidShufflingStrategyError(CyyrusWarning):
     def __init__(
         self,
         message: str = Messages.INVALID_SHUFFLING_STRATEGY,
-        extra_info: Dict[str, str] = None,
+        extra_info: Optional[Dict[str, str]] = None,
     ):
         super().__init__(
             message,
@@ -248,13 +248,36 @@ class ReferenceTypeNotFoundError(CyyrusWarning):
         super().__init__(message)
 
 
-class InvalidBaseTypeError(CyyrusWarning):
+class InvalidTypeError(CyyrusException):
     """
-    InvalidBaseTypeError class to handle invalid base type errors.
+    InvalidTypeError class to handle invalid base type errors.
     """
 
-    def __init__(self, message: str = Messages.INVALID_BASE_TYPE):
-        super().__init__(message)
+    def __init__(
+        self,
+        message: str = Messages.INVALID_TYPE,
+        extra_info: Optional[Dict[str, str]] = None,
+    ):
+        super().__init__(
+            message,
+            extra_info=extra_info,
+        )
+
+
+class MaximumDepthExceededError(CyyrusException):
+    """
+    MaximumDepthExceededError class to handle maximum depth exceeded errors.
+    """
+
+    def __init__(
+        self,
+        message: str = Messages.MAXIMUM_DEPTH_EXCEEDED,
+        extra_info: Optional[Dict[str, str]] = None,
+    ):
+        super().__init__(
+            message,
+            extra_info=extra_info,
+        )
 
 
 # ==============================
@@ -270,7 +293,7 @@ class TaskNotFoundError(CyyrusException):
     def __init__(
         self,
         message: str = Messages.REFERENCED_TASK_ID_NOT_FOUND,
-        extra_info: Dict[str, str] = None,  # Specify the task_id that was not found
+        extra_info: Optional[Dict[str, str]] = None,  # Specify the task_id that was not found
     ):
         super().__init__(
             message,
@@ -286,7 +309,9 @@ class TaskPropertiesMissingError(CyyrusException):
     def __init__(
         self,
         message: str = Messages.TASK_PROPERTIES_UNSPECIFIED,
-        extra_info: Dict[str, str] = None,  # Specify the task_id for which properties are missing
+        extra_info: Optional[
+            Dict[str, str]
+        ] = None,  # Specify the task_id for which properties are missing
     ):
         super().__init__(
             message,
@@ -302,7 +327,9 @@ class TaskSpecificationMissingError(CyyrusException):
     def __init__(
         self,
         message: str = Messages.TASK_SPECIFICATION_MISSING,
-        extra_info: Dict[str, str] = None,  # Specify the task_id for which specification is missing
+        extra_info: Optional[
+            Dict[str, str]
+        ] = None,  # Specify the task_id for which specification is missing
     ):
         super().__init__(
             message,
@@ -323,7 +350,7 @@ class ColumnTypeNotFoundError(CyyrusException):
     def __init__(
         self,
         message: str = Messages.COLUMN_TYPE_NOT_FOUND,
-        extra_info: Dict[str, str] = None,  # Specify the column_id that was not found
+        extra_info: Optional[Dict[str, str]] = None,  # Specify the column_id that was not found
     ):
         super().__init__(
             message,
@@ -339,7 +366,7 @@ class ColumnIDNotFoundError(CyyrusException):
     def __init__(
         self,
         message: str = Messages.COLUMNN_ID_NOT_FOUND,
-        extra_info: Dict[str, str] = None,  # Specify the column_id that was not found
+        extra_info: Optional[Dict[str, str]] = None,  # Specify the column_id that was not found
     ):
         super().__init__(
             message,
@@ -355,7 +382,9 @@ class ColumnTaskIDNotFoundError(CyyrusException):
     def __init__(
         self,
         message: str = Messages.COLUMN_TASK_ID_NOT_FOUND,
-        extra_info: Dict[str, str] = None,  # Specify the column_id for which task_id is missing
+        extra_info: Optional[
+            Dict[str, str]
+        ] = None,  # Specify the column_id for which task_id is missing
     ):
         super().__init__(
             message,
@@ -371,7 +400,7 @@ class DuplicateColumnIDError(CyyrusException):
     def __init__(
         self,
         message: str = Messages.DUPLICATE_COLUMN_NAME,
-        extra_info: Dict[str, str] = None,  # Specify the column_id that is duplicated
+        extra_info: Optional[Dict[str, str]] = None,  # Specify the column_id that is duplicated
     ):
         super().__init__(
             message,
