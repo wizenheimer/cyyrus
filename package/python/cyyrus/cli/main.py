@@ -1,4 +1,4 @@
-# src/cli/main.py
+# package/python/cli/main.py
 
 import click
 

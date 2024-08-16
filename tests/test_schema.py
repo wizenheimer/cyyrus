@@ -434,16 +434,16 @@ def test_type():
 def test_create_dynamic_type():
     # Test simple types
     str_type = create_dynamic_type({"type": "string"})
-    assert isinstance(str_type, str)
+    assert str_type is str
 
     int_type = create_dynamic_type({"type": "integer"})
-    assert isinstance(int_type, int)
+    assert int_type is int
 
     float_type = create_dynamic_type({"type": "float"})
-    assert isinstance(float_type, float)
+    assert float_type is float
 
     bool_type = create_dynamic_type({"type": "boolean"})
-    assert isinstance(bool_type, bool)
+    assert bool_type is bool
 
     # Test object type
     obj_type = create_dynamic_type(

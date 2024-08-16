@@ -11,7 +11,7 @@ class InstallSystemDependencies(install):
     def run(self):
         """Run post-install hook."""
         try:
-            subprocess.check_call([sys.executable, "-m", "src.cyyrus.cli.pre_install"])
+            subprocess.check_call([sys.executable, "-m", "package.python.cyyrus.cli.pre_install"])
         except subprocess.CalledProcessError as e:
             print(f"Pre-install script failed: {e}", file=sys.stderr)
             sys.exit(1)
@@ -24,11 +24,11 @@ class InstallDevelopmentSystemDependencies(develop):
     def run(self):
         """Run post-install hook."""
         try:
-            subprocess.check_call([sys.executable, "-m", "src.cyyrus.cli.pre_install"])
+            subprocess.check_call([sys.executable, "-m", "package.python.cyyrus.cli.pre_install"])
         except subprocess.CalledProcessError as e:
             print(f"Pre-install script failed: {e}", file=sys.stderr)
             sys.exit(1)
-        install.run(self)
+        install.run(self)  # type: ignore
 
 
 def parse_requirements(filename):
@@ -49,9 +49,9 @@ setup(
     author="wizenheimer",
     author_email="cyyruslabs@gmail.com",
     url="https://github.com/wizenheimer/cyyrus",
-    packages=find_packages("src"),
+    packages=find_packages("package/python"),
     package_dir={
-        "": "src",
+        "": "package/python",
     },
     install_requires=requirements,
     cmdclass={
