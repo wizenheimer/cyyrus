@@ -1,7 +1,3 @@
-from cyyrus.constants.sections import Sections
-from cyyrus.constants.types import Types
-
-
 class Messages:
     """
     Constants for messages
@@ -17,7 +13,7 @@ class Messages:
 
     SCHEMA_COULD_NOT_BE_VALIDATED = "Schema could not be validated. Please check the schema file. For more details, see the https://cyyrus.com/docs/schema"
 
-    REQUIRED_SECTION_MISSING_IN_SCHEMA = f"Required section missing in schema. Required sections include{Sections.get_required_sections()}. For more details, see the https://cyyrus.com/docs/schema"
+    REQUIRED_SECTION_MISSING_IN_SCHEMA = "Required section missing in schema. For more details, see the https://cyyrus.com/docs/schema"
 
     # ==============================
     # Reference Section validation error
@@ -25,7 +21,9 @@ class Messages:
 
     REFERENCE_TYPE_MISSING = "Reference type missing. Specify a valid reference type. For more details, see the https://cyyrus.com/docs/schema"
 
-    REFERENCE_TYPE_NOT_SUPPORTED = f"Reference type not supported. References could be one of {Types.get_allowed_types()}. For more details, see the https://cyyrus.com/docs/schema"
+    REFERENCE_TYPE_NOT_SUPPORTED = (
+        "Reference type not supported. For more details, see the https://cyyrus.com/docs/schema"
+    )
 
     REFERENCE_PROPERTIES_MISSING = "Reference properties missing. Specify properties for the references. For more details, see the https://cyyrus.com/docs/schema"
 
@@ -53,13 +51,15 @@ class Messages:
     # Types Section validation error
     # ==============================
 
-    INVALID_BASE_TYPE = "Invalid base type. Specify a valid base type. Defaulting to `string`. For more details, see the https://cyyrus.com/docs/schema"
+    INVALID_TYPE = "Invalid type. Specify a valid type. For more details, see the https://cyyrus.com/docs/schema"
 
     TYPE_PROPERTIES_MISSING_FOR_OBJECT_TYPE = "Type properties missing for object type. Specify `properties` for the object type. For more details, see the https://cyyrus.com/docs/schema"
 
     TYPE_ITEMS_MISSING_FOR_ARRAY_TYPE = "Type items missing for array type. Specify `items` for the array type. For more details, see the https://cyyrus.com/docs/schema"
 
     DUPLICATE_TYPE_NAME = "Duplicate type name found. Type names must be unique. For more details, see the https://cyyrus.com/docs/schema"
+
+    MAXIMUM_DEPTH_EXCEEDED = "Maximum depth exceeded. Please check the schema file. For more details, see the https://cyyrus.com/docs/schema."
 
     REFERENCE_TYPE_NOT_FOUND = "Reference type not found. Specify a valid reference type. Defaulting to `string`. For more details, see the https://cyyrus.com/docs/schema"
 

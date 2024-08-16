@@ -1,9 +1,5 @@
-from .schema import Schema
-from .sections import Sections
-from .types import Types
+from .messages import Messages
 
 __all__ = [
-    "Schema",
-    "Sections",
-    "Types",
+    "Messages",
 ]
