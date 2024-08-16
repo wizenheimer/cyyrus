@@ -18,11 +18,11 @@ class DataType(str, Enum):
 
 
 class ObjectProperty(BaseModel):
-    type: Union[DataType, str]
+    type: DataType  # Union[DataType, str] incase, we allow aliasing
 
 
 class ArrayItems(BaseModel):
-    type: Union[DataType, str]
+    type: DataType  # Union[DataType, str] incase, we allow aliasing
     properties: Optional[Dict[str, Union[ObjectProperty, str]]] = None
 
     @model_validator(mode="after")
@@ -30,12 +30,12 @@ class ArrayItems(BaseModel):
         if values.properties:
             for key, value in values.properties.items():
                 if isinstance(value, str):
-                    values.properties[key] = ObjectProperty(type=value)
+                    values.properties[key] = ObjectProperty(type=value)  # type: ignore
         return values
 
 
 class Type(BaseModel):
-    type: Union[DataType, str]
+    type: DataType  # Union[DataType, str] incase, we allow aliasing
     properties: Optional[Dict[str, Union[str, ObjectProperty, Dict[str, Any]]]] = None
     items: Optional[ArrayItems] = None
     dynamic_model: Optional[Any] = None
@@ -56,7 +56,7 @@ class Type(BaseModel):
         if values.properties:
             for key, value in values.properties.items():
                 if isinstance(value, str):
-                    values.properties[key] = ObjectProperty(type=value)
+                    values.properties[key] = ObjectProperty(type=value)  # type: ignore
         return values
 
     @model_validator(mode="after")
@@ -79,7 +79,7 @@ def get_python_type(type_string: str) -> type:
 def create_dynamic_type(
     type_def: Dict[str, Any], depth: int = 0, max_depth: int = 5
 ) -> Union[type, BaseModel]:
-    if depth > max_depth:
+    if depth >= max_depth:
         raise MaximumDepthExceededError(extra_info={"max_depth": str(max_depth)})
 
     # Recursively create models for nested types
