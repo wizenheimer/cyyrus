@@ -38,7 +38,7 @@ class Spec(BaseModel):
         if duplicates:
             raise DuplicateColumnIDError(
                 extra_info={
-                    "duplicates": list(duplicates),
+                    "duplicates": str(duplicates),
                 },
             )
 
@@ -48,7 +48,7 @@ class Spec(BaseModel):
         if missing_columns:
             raise ColumnIDNotFoundError(
                 extra_info={
-                    "missing_columns": list(missing_columns),
+                    "missing_columns": str(missing_columns),
                 },
             )
 
