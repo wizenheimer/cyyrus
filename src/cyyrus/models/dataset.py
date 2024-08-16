@@ -57,20 +57,20 @@ class DatasetShuffle(BaseModel):
 
 
 class DatasetSplits(BaseModel):
-    train: float = Field(
+    train: Optional[float] = Field(
         default=0.8,
         ge=0,
         le=1,
         description="Percentage of the dataset to use for training",
     )
     test: Optional[float] = Field(
-        0.1,
+        default=0.1,
         ge=0,
         le=1,
         description="Percentage of the dataset to use for testing",
     )
     validation: Optional[float] = Field(
-        0.1,
+        default=0.1,
         ge=0,
         le=1,
         description="Percentage of the dataset to use for validation",
@@ -138,7 +138,7 @@ class Dataset(BaseModel):
         description="Shuffle configuration for the dataset",
     )
     splits: DatasetSplits = Field(
-        default_factory=DatasetSplits,
+        default_factory=DatasetSplits,  # type: ignore
         description="Splits for the dataset",
     )
     attributes: DatasetAttributes = Field(

@@ -58,7 +58,10 @@ class Spec(BaseModel):
     def validate_column_types(cls, values):
         types = values.types
         for column_name, column in values.columns.items():
-            if column.column_type not in types and column.column_type not in DataType.__members__:
+            # if column.column_type not in types and column.column_type not in DataType.__members__:
+            if column.column_type not in types and column.column_type not in [
+                dt.value for dt in DataType
+            ]:
                 raise ColumnTypeNotFoundError(
                     extra_info={
                         "column_name": column_name,
