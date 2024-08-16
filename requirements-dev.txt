@@ -1289,7 +1289,9 @@ types-python-dateutil==2.9.0.20240316 \
 typing-extensions==4.12.2 \
     --hash=sha256:04e5ca0351e0f3f85c6853954072df659d0d13fac324d0072316b67d7794700d \
     --hash=sha256:1a7ead55c7e559dd4dee8856e3a88b41225abfe1ce8df57b7c13915fe121ffb8
-    # via textual
+    # via
+    #   -c requirements.txt
+    #   textual
 uc-micro-py==1.0.3 \
     --hash=sha256:d321b92cff673ec58027c04015fcaa8bb1e005478643ff4a500882eaab88c48a \
     --hash=sha256:db1dffff340817673d7b466ec86114a9dc0e9d4d9b5ba229d9d60e5c12600cd5

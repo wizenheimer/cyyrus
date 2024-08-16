@@ -8,4 +8,4 @@ include requirements-dev.in
 include requirements-dev.txt
 include requirements.in
 include requirements.txt
-recursive-include src *
+recursive-include package/python *

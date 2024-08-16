@@ -13,18 +13,18 @@ exclude = [
     "**/node_modules",
     "**/__pycache__",
     "experimental",    # Exclude experimental directory
-    "src/typestubs",
+    "package/python/typestubs",
 ]
 
 [tool.pytest]
-pythonpath = ["src"]
+pythonpath = ["package/python"]
 
 [tool.commitizen]
 name = "cz_conventional_commits"
 version = "0.0.1"
 tag_format = "$version"
 version_scheme = "semver2"
-version_files = ["setup.py", "src/cyyrus/__version__.py"]
+version_files = ["setup.py", "package/python/cyyrus/__version__.py"]
 update_changelog_on_bump = false                          # Changelogs are disabled
 
 [tool.commitizen.change_type_map]
