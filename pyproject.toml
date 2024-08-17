@@ -12,12 +12,13 @@ strictListInference = true # Use union types when inferring types of lists eleme
 exclude = [
     "**/node_modules",
     "**/__pycache__",
-    "experimental",    # Exclude experimental directory
+    "experimental",             # Exclude experimental directory
     "package/python/typestubs",
 ]
 
 [tool.pytest]
 pythonpath = ["package/python"]
+testpaths = "tests"
 
 [tool.commitizen]
 name = "cz_conventional_commits"
@@ -25,7 +26,7 @@ version = "0.0.1"
 tag_format = "$version"
 version_scheme = "semver2"
 version_files = ["setup.py", "package/python/cyyrus/__version__.py"]
-update_changelog_on_bump = false                          # Changelogs are disabled
+update_changelog_on_bump = false                                     # Changelogs are disabled
 
 [tool.commitizen.change_type_map]
 build = "MAJOR"

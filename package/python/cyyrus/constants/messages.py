@@ -71,6 +71,8 @@ class Messages:
 
     REFERENCED_TASK_ID_NOT_FOUND = "Referenced task_id not found. Specify a valid task_id. For more details, see the https://cyyrus.com/docs/schema"
 
+    TASK_INPUTS_CYCLIC_DEPENDENCY = "Task inputs have cyclic dependency. Please check the schema file. For more details, see the https://cyyrus.com/docs/schema"
+
     # Column Section validation error
 
     COLUMN_TYPE_NOT_FOUND = "Column type not found. Specify a valid column type. Defaulting to `string`. For more details, see the https://cyyrus.com/docs/schema"

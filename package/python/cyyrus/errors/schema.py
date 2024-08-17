@@ -337,6 +337,22 @@ class TaskSpecificationMissingError(CyyrusException):
         )
 
 
+class TaskCyclicDependencyError(CyyrusException):
+    """
+    TaskCyclicDependencyError class to handle task cyclic dependency errors.
+    """
+
+    def __init__(
+        self,
+        message: str = Messages.TASK_INPUTS_CYCLIC_DEPENDENCY,
+        extra_info: Optional[Dict[str, str]] = None,
+    ):
+        super().__init__(
+            message,
+            extra_info=extra_info,
+        )
+
+
 # ==============================
 # Column Section validation error
 # ==============================
