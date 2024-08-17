@@ -25,8 +25,12 @@ class TaskType(str, Enum):
     KEY_FRAME_EXTRACTION = "key_frame_extraction"
     FACE_EXTRACTION = "face_extraction"
     ENTITY_RECOGNITION = "entity_recognition"
+    NONE = "none"
 
 
 class Task(BaseModel):
     task_type: TaskType
     task_properties: Dict[str, Union[int, str, float]]
+
+
+# TODO: implement validation for task_properties depending on task_type

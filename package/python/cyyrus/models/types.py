@@ -2,6 +2,7 @@ from pydantic import (
     BaseModel,
     create_model,
 )
+from pydantic.fields import Field
 from pydantic.functional_validators import model_validator
 from typing import Any, Dict, Union, Optional, List
 from enum import Enum
@@ -38,7 +39,7 @@ class Type(BaseModel):
     type: DataType  # Union[DataType, str] incase, we allow aliasing
     properties: Optional[Dict[str, Union[str, ObjectProperty, Dict[str, Any]]]] = None
     items: Optional[ArrayItems] = None
-    dynamic_model: Optional[Any] = None
+    dynamic_model: Optional[Any] = Field(None, exclude=True)
 
     def __init__(self, **data):
         super().__init__(**data)
