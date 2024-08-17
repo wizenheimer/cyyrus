@@ -1,5 +1,18 @@
 from typing import Dict
 from pydantic import BaseModel, Field
+from enum import Enum
+
+
+class ReferenceType(str, Enum):
+    DOCUMENT = "document"
+    VISION = "vision"
+    AUDIO = "audio"
+    VIDEO = "video"
+    TEXT = "text"
+    TABULAR = "tabular"
+    URL = "url"
+    ARCHIVE = "archive"
+    SQL = "sql"
 
 
 class Column(BaseModel):
