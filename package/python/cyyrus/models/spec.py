@@ -18,7 +18,7 @@ from cyyrus.models.column import Column
 from cyyrus.models.dataset import Dataset, SpecVersion
 from cyyrus.models.reference import Reference
 from cyyrus.models.task import Task, TaskType
-from cyyrus.models.types import Type, DataType
+from cyyrus.models.types import CustomType, DataType
 from cyyrus.utils.mermaid import Mermaid
 
 
@@ -27,7 +27,7 @@ class Spec(BaseModel):
     dataset: Dataset
     reference: Dict[str, Reference]
     tasks: Dict[str, Task]
-    types: Dict[str, Type]
+    types: Dict[str, CustomType]
     columns: Dict[str, Column]
 
     def extract_dag_representation(self) -> Dict[str, List[str]]:
@@ -129,7 +129,7 @@ class Spec(BaseModel):
     def extract_task_info(
         self,
         column_name: str,
-    ) -> Tuple[TaskType, Dict[str, Union[int, str, float]], Dict[str, str]]:
+    ) -> Tuple[str, TaskType, Dict[str, Union[int, str, float]], Dict[str, str]]:
         column = self.columns.get(column_name)
 
         # If the column doesn't exist, try to find it in the reference
@@ -142,7 +142,7 @@ class Spec(BaseModel):
                         "column_name": column_name,
                     }
                 )
-            return TaskType.NONE, {}, {}
+            return column_name, TaskType.NONE, {}, {}
 
         task = self.tasks.get(column.task_id)
         if not task:
@@ -152,7 +152,7 @@ class Spec(BaseModel):
                 }
             )
 
-        return task.task_type, task.task_properties, column.task_input
+        return column_name, task.task_type, task.task_properties, column.task_input
 
     def generate_mermaid_graph(
         self,
@@ -174,7 +174,8 @@ class Spec(BaseModel):
 
         for level in level_order_traversal(dependencies):
             yield (
-                level if not export_task_info else [self.extract_task_info(node) for node in level]
+                level if not export_task_info else level,
+                [self.extract_task_info(node) for node in level],
             )
 
 
