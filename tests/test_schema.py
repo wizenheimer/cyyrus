@@ -1,8 +1,8 @@
 import typing
 from pydantic import ValidationError
 import pytest
-from cyyrus.models.column import Column
-from cyyrus.models.dataset import (
+from cyyrus.models.column import Column  # type: ignore
+from cyyrus.models.dataset import (  # type: ignore
     Dataset,
     DatasetAttributes,
     DatasetMetadata,
@@ -11,20 +11,20 @@ from cyyrus.models.dataset import (
     DatasetSplits,
     SpecVersion,
 )
-from cyyrus.errors.schema import (
+from cyyrus.errors.schema import (  # type: ignore
     ColumnIDNotFoundError,
     ColumnTaskIDNotFoundError,
     ColumnTypeNotFoundError,
     DuplicateColumnIDError,
     MaximumDepthExceededError,
 )
-from cyyrus.models.reference import Reference, ReferenceType
-from cyyrus.models.types import ArrayItems, DataType, ObjectProperty, Type, create_dynamic_type
-from cyyrus.models.spec import Spec
+from cyyrus.models.reference import Reference, ReferenceType  # type: ignore
+from cyyrus.models.types import ArrayItems, DataType, ObjectProperty, Type, create_dynamic_type  # type: ignore
+from cyyrus.models.spec import Spec  # type: ignore
 from enum import Enum
 from typing import List
 
-from cyyrus.models.task import Task, TaskType
+from cyyrus.models.task import Task, TaskType  # type: ignore
 
 
 def test_missing_field():
