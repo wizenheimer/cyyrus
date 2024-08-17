@@ -1,5 +1,4 @@
-import typing
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 import pytest
 from cyyrus.models.column import Column  # type: ignore
 from cyyrus.models.dataset import (  # type: ignore
@@ -22,7 +21,7 @@ from cyyrus.models.reference import Reference, ReferenceType  # type: ignore
 from cyyrus.models.types import ArrayItems, DataType, ObjectProperty, CustomType, create_dynamic_type  # type: ignore
 from cyyrus.models.spec import Spec  # type: ignore
 from enum import Enum
-from typing import List
+from typing import get_args, get_origin
 
 from cyyrus.models.task import Task, TaskType  # type: ignore
 
@@ -432,38 +431,48 @@ def test_type():
 
 
 def test_create_dynamic_type():
-    # Test simple types
-    str_type = create_dynamic_type({"type": "string"})
-    assert str_type is str
+    # Test primitive types
+    str_model = create_dynamic_type({"type": "string"})
+    assert issubclass(str_model, BaseModel)
+    assert str_model.model_fields["value"].annotation is str
 
-    int_type = create_dynamic_type({"type": "integer"})
-    assert int_type is int
+    int_model = create_dynamic_type({"type": "integer"})
+    assert issubclass(int_model, BaseModel)
+    assert int_model.model_fields["value"].annotation is int
 
-    float_type = create_dynamic_type({"type": "float"})
-    assert float_type is float
+    float_model = create_dynamic_type({"type": "float"})
+    assert issubclass(float_model, BaseModel)
+    assert float_model.model_fields["value"].annotation is float
 
-    bool_type = create_dynamic_type({"type": "boolean"})
-    assert bool_type is bool
+    bool_model = create_dynamic_type({"type": "boolean"})
+    assert issubclass(bool_model, BaseModel)
+    assert bool_model.model_fields["value"].annotation is bool
 
     # Test object type
-    obj_type = create_dynamic_type(
+    obj_model = create_dynamic_type(
         {
             "type": "object",
             "properties": {"prop1": {"type": "string"}, "prop2": {"type": "integer"}},
         }
     )
 
-    assert typing.get_type_hints(obj_type) == {
-        "prop1": str,
-        "prop2": int,
-    }
+    assert issubclass(obj_model, BaseModel)
+    assert issubclass(obj_model.model_fields["prop1"].annotation, BaseModel)  # type: ignore
+    assert obj_model.model_fields["prop1"].annotation.model_fields["value"].annotation is str
+    assert issubclass(obj_model.model_fields["prop2"].annotation, BaseModel)  # type: ignore
+    assert obj_model.model_fields["prop2"].annotation.model_fields["value"].annotation is int
 
     # Test array type
-    array_type = create_dynamic_type({"type": "array", "items": {"type": "string"}})
-    assert array_type == List[str]
+    array_model = create_dynamic_type({"type": "array", "items": {"type": "string"}})
+    assert issubclass(array_model, BaseModel)
+    items_type = array_model.model_fields["items"].annotation
+    assert get_origin(items_type) is list
+    item_type = get_args(items_type)[0]
+    assert issubclass(item_type, BaseModel)
+    assert item_type.model_fields["value"].annotation is str
 
     # Test nested object type
-    nested_obj_type = create_dynamic_type(
+    nested_obj_model = create_dynamic_type(
         {
             "type": "object",
             "properties": {
@@ -475,26 +484,16 @@ def test_create_dynamic_type():
         }
     )
 
-    assert nested_obj_type.model_json_schema() == {
-        "$defs": {
-            "DynamicModel": {
-                "properties": {
-                    "prop1": {"title": "Prop1", "type": "string"},
-                    "prop2": {"title": "Prop2", "type": "integer"},
-                },
-                "required": ["prop1", "prop2"],
-                "title": "DynamicModel",
-                "type": "object",
-            },
-        },
-        "properties": {"nested": {"$ref": "#/$defs/DynamicModel"}},
-        "required": ["nested"],
-        "title": "DynamicModel",
-        "type": "object",
-    }
+    assert issubclass(nested_obj_model, BaseModel)
+    assert issubclass(nested_obj_model.model_fields["nested"].annotation, BaseModel)  # type: ignore
+    nested_model = nested_obj_model.model_fields["nested"].annotation
+    assert issubclass(nested_model.model_fields["prop1"].annotation, BaseModel)  # type: ignore
+    assert nested_model.model_fields["prop1"].annotation.model_fields["value"].annotation is str
+    assert issubclass(nested_model.model_fields["prop2"].annotation, BaseModel)  # type: ignore
+    assert nested_model.model_fields["prop2"].annotation.model_fields["value"].annotation is int
 
     # Test maximum depth exceeded
-    with pytest.raises(MaximumDepthExceededError):
+    with pytest.raises(MaximumDepthExceededError) as excinfo:
         create_dynamic_type(
             {
                 "type": "object",
@@ -521,3 +520,30 @@ def test_create_dynamic_type():
                 },
             },
         )
+    assert excinfo.value.extra_info["max_depth"] == "5"
+
+    # Test with custom max_depth
+    deep_nested_model = create_dynamic_type(
+        {
+            "type": "object",
+            "properties": {
+                "nested1": {
+                    "type": "object",
+                    "properties": {
+                        "nested2": {
+                            "type": "object",
+                            "properties": {"prop": {"type": "string"}},
+                        }
+                    },
+                }
+            },
+        },
+        max_depth=10,
+    )
+    assert issubclass(deep_nested_model, BaseModel)
+    assert issubclass(deep_nested_model.model_fields["nested1"].annotation, BaseModel)  # type: ignore
+    nested1_model = deep_nested_model.model_fields["nested1"].annotation
+    assert issubclass(nested1_model.model_fields["nested2"].annotation, BaseModel)  # type: ignore
+    nested2_model = nested1_model.model_fields["nested2"].annotation
+    assert issubclass(nested2_model.model_fields["prop"].annotation, BaseModel)  # type: ignore
+    assert nested2_model.model_fields["prop"].annotation.model_fields["value"].annotation is str

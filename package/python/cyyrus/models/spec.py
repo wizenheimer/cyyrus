@@ -1,6 +1,6 @@
 from collections import defaultdict
 from pydantic import BaseModel, model_validator
-from typing import Dict, List, Set, Tuple, Union
+from typing import Any, Dict, List, Set, Tuple, Union
 import yaml
 import requests
 from pathlib import Path
@@ -129,7 +129,7 @@ class Spec(BaseModel):
     def extract_task_info(
         self,
         column_name: str,
-    ) -> Tuple[str, TaskType, Dict[str, Union[int, str, float]], Dict[str, str]]:
+    ) -> Tuple[str, TaskType, Dict[str, Union[int, str, float]], Dict[str, str], Union[Any, None]]:
         column = self.columns.get(column_name)
 
         # If the column doesn't exist, try to find it in the reference
@@ -142,7 +142,7 @@ class Spec(BaseModel):
                         "column_name": column_name,
                     }
                 )
-            return column_name, TaskType.NONE, {}, {}
+            return column_name, TaskType.NONE, {}, {}, None
 
         task = self.tasks.get(column.task_id)
         if not task:
@@ -152,7 +152,15 @@ class Spec(BaseModel):
                 }
             )
 
-        return column_name, task.task_type, task.task_properties, column.task_input
+        custom_type: CustomType | None = self.types.get(column.column_type)
+
+        return (
+            column_name,
+            task.task_type,
+            task.task_properties,
+            column.task_input,
+            custom_type.dynamic_model if custom_type else None,
+        )
 
     def generate_mermaid_graph(
         self,
@@ -167,16 +175,12 @@ class Spec(BaseModel):
 
     def levels(
         self,
-        export_task_info: bool = False,
     ):
         # Extract the DAG representation
         dependencies: Dict[str, List[str]] = self.extract_dag_representation()
 
         for level in level_order_traversal(dependencies):
-            yield (
-                level if not export_task_info else level,
-                [self.extract_task_info(node) for node in level],
-            )
+            yield [self.extract_task_info(node) for node in level]
 
 
 def load_spec(path_or_url: str) -> Spec:
