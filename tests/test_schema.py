@@ -19,7 +19,7 @@ from cyyrus.errors.schema import (  # type: ignore
     MaximumDepthExceededError,
 )
 from cyyrus.models.reference import Reference, ReferenceType  # type: ignore
-from cyyrus.models.types import ArrayItems, DataType, ObjectProperty, Type, create_dynamic_type  # type: ignore
+from cyyrus.models.types import ArrayItems, DataType, ObjectProperty, CustomType, create_dynamic_type  # type: ignore
 from cyyrus.models.spec import Spec  # type: ignore
 from enum import Enum
 from typing import List
@@ -238,7 +238,7 @@ def test_spec():
     mock_dataset = Dataset()
     mock_reference = {"ref1": Reference(type=ReferenceType.DOCUMENT, path="/path/to/doc")}
     mock_tasks = {"task1": Task(task_type=TaskType.GENERATION, task_properties={})}
-    mock_types = {"type1": Type(type=DataType.STRING)}
+    mock_types = {"type1": CustomType(type=DataType.STRING)}
     mock_columns = {"col1": Column(column_type="string", task_id="task1")}
 
     # Test valid Spec
@@ -353,7 +353,7 @@ def test_alias_types():
     assert prop2.type == "custom_type"
 
     # Test with invalid type
-    Type(type="invalid_type")
+    CustomType(type="invalid_type")
 
 
 def test_array_items():
@@ -399,14 +399,14 @@ def test_array_items():
 
 def test_type():
     # Test valid Type
-    valid_type = Type(type=DataType.STRING)
+    valid_type = CustomType(type=DataType.STRING)
     assert valid_type.type == DataType.STRING
     assert valid_type.properties is None
     assert valid_type.items is None
     assert valid_type.dynamic_model is not None
 
     # Test Type with properties
-    type_with_props = Type(
+    type_with_props = CustomType(
         type=DataType.OBJECT, properties={"prop1": ObjectProperty(type=DataType.INTEGER)}
     )
     assert type_with_props.type == DataType.OBJECT
@@ -415,18 +415,18 @@ def test_type():
     assert type_with_props.dynamic_model is not None
 
     # Test Type with items
-    type_with_items = Type(type=DataType.ARRAY, items=ArrayItems(type=DataType.STRING))
+    type_with_items = CustomType(type=DataType.ARRAY, items=ArrayItems(type=DataType.STRING))
     assert type_with_items.type == DataType.ARRAY
     assert type_with_items.items.type == DataType.STRING  # type: ignore
     assert type_with_items.dynamic_model is not None
 
     # Test invalid Type (missing required field)
     with pytest.raises(ValidationError):
-        Type()
+        CustomType()
 
     # Test Type with invalid dynamic model
     with pytest.raises(ValidationError):
-        Type(
+        CustomType(
             type="invalid_type"
         )  # Deviates from the schema, which doesn't allow custom/aliased types
 
