@@ -173,7 +173,7 @@ build: update-dependencies
 .PHONY: test
 test: update-dependencies
 	@echo "== Triggering tests =="
-	pytest $(TEST_DIR)/* $(PYTEST_OPTIONS)
+	pytest $(PYTEST_OPTIONS)
 
 # Targets to Publish the project to TestPyPI
 .PHONY: publish
@@ -184,7 +184,7 @@ publish: test build
 # Target to create an experimental session with package
 .PHONY: experimental
 experimental:
-	cd experimental && PYTHONPATH=$(realpath src) JUPYTER_PATH=$(realpath .) jupyter-notebook --NotebookApp.token='' --NotebookApp.password=''
+	cd experimental && PYTHONPATH=$(realpath package/python) JUPYTER_PATH=$(realpath .) jupyter-notebook --NotebookApp.token='' --NotebookApp.password=''
 
 # ==============================================================================
 # 								Code Quality with Fix
