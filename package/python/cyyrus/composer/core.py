@@ -1,0 +1,2 @@
+class Composer:
+    pass
