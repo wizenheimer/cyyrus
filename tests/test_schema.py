@@ -14,10 +14,8 @@ from cyyrus.errors.schema import (  # type: ignore
     ColumnIDNotFoundError,
     ColumnTaskIDNotFoundError,
     ColumnTypeNotFoundError,
-    DuplicateColumnIDError,
     MaximumDepthExceededError,
 )
-from cyyrus.models.reference import Reference, ReferenceType  # type: ignore
 from cyyrus.models.types import ArrayItems, DataType, ObjectProperty, CustomType, create_dynamic_type  # type: ignore
 from cyyrus.models.spec import Spec  # type: ignore
 from enum import Enum
@@ -205,37 +203,9 @@ def test_dataset():
     assert custom_dataset.attributes.required_columns == ["col1"]
 
 
-def test_reference_type():
-    assert ReferenceType.DOCUMENT == "document"
-    assert isinstance(ReferenceType.DOCUMENT, Enum)
-
-
-def test_reference():
-    # Test valid Reference
-    valid_reference = Reference(type=ReferenceType.DOCUMENT, path="/path/to/document")
-    assert valid_reference.type == ReferenceType.DOCUMENT
-    assert valid_reference.path == "/path/to/document"
-    assert valid_reference.description == ""
-
-    # Test Reference with all fields
-    full_reference = Reference(
-        type=ReferenceType.VISION,
-        path=["/path/to/image1", "/path/to/image2"],
-        description="Vision reference",
-    )
-    assert full_reference.type == ReferenceType.VISION
-    assert full_reference.path == ["/path/to/image1", "/path/to/image2"]
-    assert full_reference.description == "Vision reference"
-
-    # Test invalid Reference (missing required field)
-    with pytest.raises(ValidationError):
-        Reference(description="Invalid reference")  # type: ignore
-
-
 def test_spec():
     # Create mock data for testing
     mock_dataset = Dataset()
-    mock_reference = {"ref1": Reference(type=ReferenceType.DOCUMENT, path="/path/to/doc")}
     mock_tasks = {"task1": Task(task_type=TaskType.GENERATION, task_properties={})}
     mock_types = {"type1": CustomType(type=DataType.STRING)}
     mock_columns = {"col1": Column(column_type="string", task_id="task1")}
@@ -244,35 +214,21 @@ def test_spec():
     valid_spec = Spec(
         spec=SpecVersion.V0,
         dataset=mock_dataset,
-        reference=mock_reference,
         tasks=mock_tasks,
         types=mock_types,
         columns=mock_columns,
     )
     assert valid_spec.spec == SpecVersion.V0
     assert isinstance(valid_spec.dataset, Dataset)
-    assert "ref1" in valid_spec.reference
     assert "task1" in valid_spec.tasks
     assert "type1" in valid_spec.types
     assert "col1" in valid_spec.columns
-
-    # Test invalid Spec (duplicate column and reference names)
-    with pytest.raises(DuplicateColumnIDError):
-        Spec(
-            spec=SpecVersion.V0,
-            dataset=mock_dataset,
-            reference={"duplicate": Reference(type=ReferenceType.DOCUMENT, path="/path")},
-            tasks=mock_tasks,
-            types=mock_types,
-            columns={"duplicate": Column(column_type="string", task_id="task1")},
-        )
 
     # Test invalid Spec (missing required column)
     with pytest.raises(ColumnIDNotFoundError):
         Spec(
             spec=SpecVersion.V0,
             dataset=Dataset(attributes=DatasetAttributes(required_columns=["missing_column"])),
-            reference=mock_reference,
             tasks=mock_tasks,
             types=mock_types,
             columns=mock_columns,
@@ -283,7 +239,6 @@ def test_spec():
         Spec(
             spec=SpecVersion.V0,
             dataset=mock_dataset,
-            reference=mock_reference,
             tasks=mock_tasks,
             types=mock_types,
             columns={"invalid_col": Column(column_type="invalid_type", task_id="task1")},
@@ -294,7 +249,6 @@ def test_spec():
         Spec(
             spec=SpecVersion.V0,
             dataset=mock_dataset,
-            reference=mock_reference,
             tasks=mock_tasks,
             types=mock_types,
             columns={"invalid_col": Column(column_type="string", task_id="invalid_task")},
