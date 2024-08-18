@@ -1,5 +1,6 @@
 from typing import Any, Dict
-from tasks.base import BaseTask
+
+from cyyrus.tasks.base import BaseTask
 
 
 class DefaultTask(BaseTask):

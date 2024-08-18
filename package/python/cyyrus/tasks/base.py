@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Dict, Optional
 
 
 class BaseTask(ABC):
@@ -7,22 +7,23 @@ class BaseTask(ABC):
 
     def __init__(
         self,
-    ):
-        pass
+        task_properties: Dict[str, Any],
+        task_model: Optional[Any] = None,
+    ) -> None:
+        super().__init__()
 
     def execute(
         self,
-        task_model: Any,
-        task_inputs: List[Dict[str, Any]],
+        task_input: Dict[str, Any],
     ) -> Any:
-        # TODO: iterate over task_inputs and execute the task
-        # self._execute()
-        # TODO: return the result of the task execution and merge it with the task_inputs
+        # TODO: trigger self._execute() method using the task_input
+        # TODO: merge it with the task_inputs
+        # TODO: return the merged result
         pass
 
     @abstractmethod
     def _execute(
-        self,
+        cls,
         task_input: Dict[str, Any],
     ):
         pass
