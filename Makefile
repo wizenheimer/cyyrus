@@ -171,7 +171,7 @@ build: update-dependencies
 
 # Targets to Test out the build
 .PHONY: test
-test: update-dependencies
+test:
 	@echo "== Triggering tests =="
 	pytest $(PYTEST_OPTIONS)
 
@@ -192,7 +192,7 @@ experimental:
 
 # Targets for Code Quality
 .PHONY: check
-check: update-dependencies lint format
+check: lint format
 
 .PHONY: lint
 lint:
@@ -206,7 +206,7 @@ format:
 
 # Targets for Code Quality with Fix
 .PHONY: fix
-fix: update-dependencies lint-fix format-fix
+fix: lint-fix format-fix
 
 .PHONY: lint-fix
 lint-fix:
