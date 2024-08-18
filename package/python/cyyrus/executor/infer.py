@@ -1,6 +1,6 @@
-from collections import defaultdict
 import importlib
 import inspect
+from collections import defaultdict
 
 
 def infer_tasks():
