@@ -1,8 +1,9 @@
-from setuptools import setup, find_packages
-from setuptools.command.install import install
-from setuptools.command.develop import develop
 import subprocess
 import sys
+
+from setuptools import find_packages, setup
+from setuptools.command.develop import develop
+from setuptools.command.install import install
 
 
 class InstallSystemDependencies(install):

@@ -1,36 +1,38 @@
-from pydantic import BaseModel, ValidationError
+from enum import Enum
+from typing import get_args, get_origin
+
 import pytest
+from cyyrus.errors.column import (  # type: ignore
+    ColumnIDNotFoundError,
+    ColumnTaskIDNotFoundError,
+    ColumnTypeNotFoundError,
+)
+from cyyrus.errors.types import MaximumDepthExceededError  # type: ignore
 from cyyrus.models.column import Column  # type: ignore
 from cyyrus.models.dataset import (  # type: ignore
     Dataset,
     DatasetAttributes,
     DatasetMetadata,
-    DatasetSampling,
     DatasetShuffle,
     DatasetSplits,
     SpecVersion,
 )
-from cyyrus.errors.schema import (  # type: ignore
-    ColumnIDNotFoundError,
-    ColumnTaskIDNotFoundError,
-    ColumnTypeNotFoundError,
-    DuplicateColumnIDError,
-    MaximumDepthExceededError,
-)
-from cyyrus.models.reference import Reference, ReferenceType  # type: ignore
-from cyyrus.models.types import ArrayItems, DataType, ObjectProperty, CustomType, create_dynamic_type  # type: ignore
 from cyyrus.models.spec import Spec  # type: ignore
-from enum import Enum
-from typing import get_args, get_origin
-
 from cyyrus.models.task import Task, TaskType  # type: ignore
+from cyyrus.models.types import (  # type: ignore
+    ArrayItems,
+    CustomType,
+    DataType,
+    ObjectProperty,
+    create_dynamic_type,
+)
+from pydantic import BaseModel, ValidationError
 
 
 def test_missing_field():
     invalid_schema = {
         # Missing required fields
         "spec": "v0",
-        "dataset": {},
         "tasks": {},
         "types": {},
     }
@@ -76,7 +78,6 @@ def test_dataset_metadata():
     assert default_metadata.description == "Dataset generated using cyyrus"
     assert default_metadata.tags == ["dataset"]
     assert default_metadata.license == "MIT"
-    assert default_metadata.language == "en"
 
     # Test custom values
     custom_metadata = DatasetMetadata(
@@ -84,59 +85,38 @@ def test_dataset_metadata():
         description="A custom dataset",
         tags=["custom", "test"],
         license="Apache-2.0",
-        language="fr",
     )
     assert custom_metadata.name == "Custom Dataset"
     assert custom_metadata.description == "A custom dataset"
     assert custom_metadata.tags == ["custom", "test"]
     assert custom_metadata.license == "Apache-2.0"
-    assert custom_metadata.language == "fr"
-
-
-def test_dataset_sampling():
-    # Test default value
-    default_sampling = DatasetSampling()
-    assert default_sampling.percentage == 1
-
-    # Test valid custom value
-    valid_sampling = DatasetSampling(percentage=0.5)
-    assert valid_sampling.percentage == 0.5
-
-    # Test invalid values
-    with pytest.raises(ValidationError):
-        DatasetSampling(percentage=0)
-    with pytest.raises(ValidationError):
-        DatasetSampling(percentage=1.1)
 
 
 def test_dataset_shuffle():
     # Test default values
     default_shuffle = DatasetShuffle()
     assert default_shuffle.seed == 42
-    assert default_shuffle.buffer_size == 1000
 
     # Test custom values
     custom_shuffle = DatasetShuffle(seed=123, buffer_size=500)
     assert custom_shuffle.seed == 123
-    assert custom_shuffle.buffer_size == 500
 
-    # Test invalid buffer_size
+    # Test invalid seed
     with pytest.raises(ValidationError):
-        DatasetShuffle(buffer_size=0)
+        DatasetShuffle(seed="awesome")  # type: ignore
 
 
 def test_dataset_splits():
     # Test default values
-    default_splits = DatasetSplits()
+    with pytest.warns():
+        default_splits = DatasetSplits()
     assert default_splits.train == 0.8
-    assert default_splits.test == 0.1
-    assert default_splits.validation == 0.1
+    assert default_splits.test == 0.2
 
     # Test custom values
-    custom_splits = DatasetSplits(train=0.7, test=0.2, validation=0.1)
-    assert custom_splits.train == 0.7
-    assert custom_splits.test == 0.2
-    assert custom_splits.validation == 0.1
+    custom_splits = DatasetSplits(train=0.5, test=0.5)
+    assert custom_splits.train == 0.5
+    assert custom_splits.test == 0.5
 
     # Test invalid values
     with pytest.raises(ValidationError):
@@ -144,13 +124,9 @@ def test_dataset_splits():
     with pytest.raises(ValidationError):
         DatasetSplits(train=-0.1)  # type: ignore
 
-    # Test splits normalization
-    with pytest.warns():  # type: ignore
-        normalized_splits = DatasetSplits(train=0.8, test=0.3, validation=0.3)
-        assert (
-            normalized_splits.train + normalized_splits.test + normalized_splits.validation  # type: ignore
-            == pytest.approx(1.0)
-        )
+        # Test splits normalization
+    normalized_splits = DatasetSplits(train=0.8, test=0.1)
+    assert normalized_splits.train + normalized_splits.test == pytest.approx(1.0)  # type: ignore
 
 
 def test_dataset_attributes():
@@ -159,32 +135,27 @@ def test_dataset_attributes():
     assert default_attrs.required_columns == []
     assert default_attrs.unique_columns == []
     assert default_attrs.nulls == "include"
-    assert default_attrs.references == "include"
 
     # Test custom values
     custom_attrs = DatasetAttributes(
         required_columns=["col1", "col2"],
         unique_columns=["col3"],
         nulls="exclude",
-        references="exclude",
     )
     assert custom_attrs.required_columns == ["col1", "col2"]
     assert custom_attrs.unique_columns == ["col3"]
     assert custom_attrs.nulls == "exclude"
-    assert custom_attrs.references == "exclude"
 
     # Test invalid values
     with pytest.raises(ValidationError):
         DatasetAttributes(nulls="invalid")
-    with pytest.raises(ValidationError):
-        DatasetAttributes(references="invalid")
 
 
 def test_dataset():
     # Test default values
-    default_dataset = Dataset()
+    with pytest.warns():
+        default_dataset = Dataset()
     assert isinstance(default_dataset.metadata, DatasetMetadata)
-    assert isinstance(default_dataset.sampling, DatasetSampling)
     assert isinstance(default_dataset.shuffle, DatasetShuffle)
     assert isinstance(default_dataset.splits, DatasetSplits)
     assert isinstance(default_dataset.attributes, DatasetAttributes)
@@ -192,50 +163,21 @@ def test_dataset():
     # Test custom values
     custom_dataset = Dataset(
         metadata=DatasetMetadata(name="Custom Dataset"),
-        sampling=DatasetSampling(percentage=0.5),
         shuffle=DatasetShuffle(seed=123),
-        splits=DatasetSplits(train=0.7, test=0.3, validation=0),
+        splits=DatasetSplits(train=0.7, test=0.3, seed=42),
         attributes=DatasetAttributes(required_columns=["col1"]),
     )
     assert custom_dataset.metadata.name == "Custom Dataset"
-    assert custom_dataset.sampling.percentage == 0.5
     assert custom_dataset.shuffle.seed == 123
     assert custom_dataset.splits.train == 0.7
     assert custom_dataset.splits.test == 0.3
     assert custom_dataset.attributes.required_columns == ["col1"]
 
 
-def test_reference_type():
-    assert ReferenceType.DOCUMENT == "document"
-    assert isinstance(ReferenceType.DOCUMENT, Enum)
-
-
-def test_reference():
-    # Test valid Reference
-    valid_reference = Reference(type=ReferenceType.DOCUMENT, path="/path/to/document")
-    assert valid_reference.type == ReferenceType.DOCUMENT
-    assert valid_reference.path == "/path/to/document"
-    assert valid_reference.description == ""
-
-    # Test Reference with all fields
-    full_reference = Reference(
-        type=ReferenceType.VISION,
-        path=["/path/to/image1", "/path/to/image2"],
-        description="Vision reference",
-    )
-    assert full_reference.type == ReferenceType.VISION
-    assert full_reference.path == ["/path/to/image1", "/path/to/image2"]
-    assert full_reference.description == "Vision reference"
-
-    # Test invalid Reference (missing required field)
-    with pytest.raises(ValidationError):
-        Reference(description="Invalid reference")  # type: ignore
-
-
 def test_spec():
     # Create mock data for testing
-    mock_dataset = Dataset()
-    mock_reference = {"ref1": Reference(type=ReferenceType.DOCUMENT, path="/path/to/doc")}
+    with pytest.warns():
+        mock_dataset = Dataset()
     mock_tasks = {"task1": Task(task_type=TaskType.GENERATION, task_properties={})}
     mock_types = {"type1": CustomType(type=DataType.STRING)}
     mock_columns = {"col1": Column(column_type="string", task_id="task1")}
@@ -244,35 +186,23 @@ def test_spec():
     valid_spec = Spec(
         spec=SpecVersion.V0,
         dataset=mock_dataset,
-        reference=mock_reference,
         tasks=mock_tasks,
         types=mock_types,
         columns=mock_columns,
     )
     assert valid_spec.spec == SpecVersion.V0
     assert isinstance(valid_spec.dataset, Dataset)
-    assert "ref1" in valid_spec.reference
     assert "task1" in valid_spec.tasks
     assert "type1" in valid_spec.types
     assert "col1" in valid_spec.columns
 
-    # Test invalid Spec (duplicate column and reference names)
-    with pytest.raises(DuplicateColumnIDError):
-        Spec(
-            spec=SpecVersion.V0,
-            dataset=mock_dataset,
-            reference={"duplicate": Reference(type=ReferenceType.DOCUMENT, path="/path")},
-            tasks=mock_tasks,
-            types=mock_types,
-            columns={"duplicate": Column(column_type="string", task_id="task1")},
-        )
-
     # Test invalid Spec (missing required column)
     with pytest.raises(ColumnIDNotFoundError):
+        with pytest.warns():
+            dataset = Dataset(attributes=DatasetAttributes(required_columns=["missing_column"]))
         Spec(
             spec=SpecVersion.V0,
-            dataset=Dataset(attributes=DatasetAttributes(required_columns=["missing_column"])),
-            reference=mock_reference,
+            dataset=dataset,
             tasks=mock_tasks,
             types=mock_types,
             columns=mock_columns,
@@ -283,7 +213,6 @@ def test_spec():
         Spec(
             spec=SpecVersion.V0,
             dataset=mock_dataset,
-            reference=mock_reference,
             tasks=mock_tasks,
             types=mock_types,
             columns={"invalid_col": Column(column_type="invalid_type", task_id="task1")},
@@ -294,7 +223,6 @@ def test_spec():
         Spec(
             spec=SpecVersion.V0,
             dataset=mock_dataset,
-            reference=mock_reference,
             tasks=mock_tasks,
             types=mock_types,
             columns={"invalid_col": Column(column_type="string", task_id="invalid_task")},

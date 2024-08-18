@@ -1,5 +1,6 @@
-import pytest
 from typing import Dict, List
+
+import pytest
 from cyyrus.models.spec import level_order_traversal  # type: ignore
 
 

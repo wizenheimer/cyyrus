@@ -33,9 +33,9 @@ class Messages:
     # Dataset Section validation error
     # ==============================
 
-    SPLITS_DONT_ADD_UP = "Splits don't add up to 1. Please check the schema file. Would normalize the splits. For more details, see the https://cyyrus.com/docs/schema"
+    SPLITS_DONT_ADD_UP = "Splits don't add up to 1. Please check the schema file. Would normalize the splits. For more details, see the https://cyyrus.com/docs/schema. Attempting to normalize the splits."
 
-    INVALID_SPLIT_VALUE = "Invalid split value. Please check the schema file. For more details, see the https://cyyrus.com/docs/schema"
+    SPLIT_VALUE_INVALID = "Split value is invalid. Please check the schema file. For more details, see the https://cyyrus.com/docs/schema. Setting to absolute value."
 
     INVALID_TAG_TYPES = "Invalid tag types. Populating with default tags. Please check the schema file. For more details, see the https://cyyrus.com/docs/schema"
 
@@ -82,3 +82,20 @@ class Messages:
     COLUMNN_ID_NOT_FOUND = "Column ID not found. Specify a valid column ID. For more details, see the https://cyyrus.com/docs/schema"
 
     DUPLICATE_COLUMN_NAME = "Duplicate column name found. Column names must be unique across `reference` and `columns` sections. For more details, see the https://cyyrus.com/docs/schema"
+
+    # ==============================
+    #  Composer Section validation error
+    # ==============================
+    KEY_COLUMN_NOT_FOUND = "Key column not found. Specify a valid key column. For more details, see the https://cyyrus.com/docs/schema"
+
+    INVALID_KEY_COLUMN = "Invalid key column. Specify a valid key column. For more details, see the https://cyyrus.com/docs/schema"
+
+    ALL_ROWS_EXCLUDED_DUE_TO_NAN = "All rows excluded due to NaN. Please check the schema file. For more details, see the https://cyyrus.com/docs/schema"
+
+    REQUIRED_COLUMN_MISSING = "Required column missing. Creating them with empty values. Please check the schema file. For more details, see the https://cyyrus.com/docs/schema"
+
+    NON_UNIQUE_COLUMN_VALUES = "Removed non-unique column values. Please check the schema file. For more details, see the https://cyyrus.com/docs/schema"
+
+    DATASET_TOO_SMALL_FOR_SPLIT = "Dataset too small for split. Using entire dataset as train set. For more details, see the https://cyyrus.com/docs/schema"
+
+    RE_ADJUSTING_SPLIT = "Re-adjusting split values. Adjusted split sizes would be unstable or exceed dataset size. For more details, see the https://cyyrus.com/docs/schema"

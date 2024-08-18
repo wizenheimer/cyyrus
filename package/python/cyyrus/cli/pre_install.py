@@ -1,8 +1,8 @@
 # pre_install.py
 
+import platform
 import subprocess
 import sys
-import platform
 
 
 def run_command(command):

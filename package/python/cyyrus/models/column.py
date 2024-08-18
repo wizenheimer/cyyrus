@@ -1,5 +1,19 @@
+from enum import Enum
 from typing import Dict
+
 from pydantic import BaseModel, Field
+
+
+class ReferenceType(str, Enum):
+    DOCUMENT = "document"
+    VISION = "vision"
+    AUDIO = "audio"
+    VIDEO = "video"
+    TEXT = "text"
+    TABULAR = "tabular"
+    URL = "url"
+    ARCHIVE = "archive"
+    SQL = "sql"
 
 
 class Column(BaseModel):

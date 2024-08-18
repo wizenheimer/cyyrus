@@ -1,22 +1,26 @@
 from collections import defaultdict
-from pydantic import BaseModel, model_validator
-from typing import Any, Dict, List, Set, Tuple, Union
-import yaml
-import requests
 from pathlib import Path
+from typing import Any, Dict, List, Set, Tuple, Union
 from urllib.parse import urlparse
-from cyyrus.errors.schema import (
+
+import requests
+import yaml
+from pydantic import BaseModel, model_validator
+
+from cyyrus.errors.column import (
     ColumnIDNotFoundError,
     ColumnTaskIDNotFoundError,
     ColumnTypeNotFoundError,
-    DuplicateColumnIDError,
+)
+from cyyrus.errors.schema import (
     SchemaFileNotFoundError,
     SchemaParsingError,
+)
+from cyyrus.errors.task import (
     TaskCyclicDependencyError,
 )
 from cyyrus.models.column import Column
 from cyyrus.models.dataset import Dataset, SpecVersion
-from cyyrus.models.reference import Reference
 from cyyrus.models.task import Task, TaskType
 from cyyrus.models.types import CustomType, DataType
 from cyyrus.utils.mermaid import Mermaid
@@ -25,7 +29,6 @@ from cyyrus.utils.mermaid import Mermaid
 class Spec(BaseModel):
     spec: SpecVersion
     dataset: Dataset
-    reference: Dict[str, Reference]
     tasks: Dict[str, Task]
     types: Dict[str, CustomType]
     columns: Dict[str, Column]
@@ -69,22 +72,12 @@ class Spec(BaseModel):
         return values
 
     @model_validator(mode="after")
-    def validate_columns_and_references(cls, values):
+    def validate_columns_for_orphans(cls, values):
+        # Note: duplicates are handled by Pydantic + YAML Parser
         required_columns = set(values.dataset.attributes.required_columns)
-        column_names = set(values.columns.keys())
-        reference_names = set(values.reference.keys())
-
-        # Check for duplicates between columns and references
-        duplicates = column_names.intersection(reference_names)
-        if duplicates:
-            raise DuplicateColumnIDError(
-                extra_info={
-                    "duplicates": str(duplicates),
-                },
-            )
+        all_column_names = set(values.columns.keys())
 
         # Check if all required columns exist in either columns or references
-        all_column_names = column_names.union(reference_names)
         missing_columns = required_columns - all_column_names
         if missing_columns:
             raise ColumnIDNotFoundError(
@@ -132,17 +125,13 @@ class Spec(BaseModel):
     ) -> Tuple[str, TaskType, Dict[str, Union[int, str, float]], Dict[str, str], Union[Any, None]]:
         column = self.columns.get(column_name)
 
-        # If the column doesn't exist, try to find it in the reference
         if not column:
-            column = self.reference.get(column_name)
             # If the column is still not found, raise an error
-            if not column:
-                raise ColumnIDNotFoundError(
-                    extra_info={
-                        "column_name": column_name,
-                    }
-                )
-            return column_name, TaskType.NONE, {}, {}, None
+            raise ColumnIDNotFoundError(
+                extra_info={
+                    "column_name": column_name,
+                }
+            )
 
         task = self.tasks.get(column.task_id)
         if not task:

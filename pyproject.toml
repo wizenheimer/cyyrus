@@ -6,6 +6,9 @@ version = "0.0.1"
 line-length = 100
 target-version = ['py38']
 
+[tool.ruff.lint]
+select = ["I"]
+
 [tool.pyright]
 reportMissingTypeArgument = true # Report generic classes used without type arguments
 strictListInference = true # Use union types when inferring types of lists elements, instead of Any

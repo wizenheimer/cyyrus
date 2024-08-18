@@ -10,20 +10,15 @@ dataset:
     license: CC-BY-NC-SA # License of the dataset
     language: en # Language of the dataset
 
-  # Define the sampling strategy for the dataset
-  sampling:
-    percentage: 0.1
-
   # Define how to shuffle the dataset
   shuffle:
     seed: 42
-    buffer_size: 1000
 
   # Define the splits of the dataset
   splits:
     train: 0.8 # The sum of all splits should be 1, if not specified the remaining data will be used for training. Could be named train, training
-    test: 0.1 # The sum of all splits should be 1, if not specified the remaining data will be used for training. Could be named test, testing, eval, evaluation
-    validation: 0.1 # The sum of all splits should be 1, if not specified the remaining data will be used for training. Could be named validation, valid, val, dev
+    test: 0.2 # The sum of all splits should be 1, if not specified the remaining data will be used for training. Could be named test, testing, eval, evaluation
+    seed: 42 # Seed for the split
 
   # Define the attributes of the dataset
   attributes:
@@ -36,41 +31,6 @@ dataset:
       ] # List of required columns. If any of these columns are missing, the dataset will not be generated
     unique_columns: [document_id] # If there are any unique columns, specify them here. Non unique columns will be removed from the dataset
     nulls: include # Whether or not to include null values in the dataset, include, exclude, special_token
-    references: include # Whether or not to include the references in the dataset columns, include, exclude
-
-# Define the references that will be used, references are external data that will be used in the dataset and would be added to dataset column
-reference:
-  invoice:
-    # Description of the reference
-    description: Document containing the dataset
-    # Define the type of the reference, could be one of document[pdf], vision[jpg, png, tiff, bmp], audio[mp3, wav], video[mp4, avi, mkv], text[markdown, plain, html, xml], tabular[json, csv, jsonl, parquet], url, archive[zip, tar, tar.gz, tar.bz2, tar.xz], sql[sqlite, mysql, postgresql, mongodb]
-    type: document
-    # Define the path of the reference
-    path: [/path/to/first/directory, /path/to/another/directory]
-    # Additional properties go here depending on the type of the reference
-
-# Define the tasks that will be used in Dataset generation, and their properties
-tasks:
-  extract_invoice_data: # This is the task_id
-    task_type: generation # This is the type of the task, task_type could be one of diarization, generation, transcription, categorization, embedding, captioning, object_detection, dense_region_captioning, region_proposal, caption_to_phrase_grounding, referring_expression_segmentation, region_to_segmentation, open_vocabulary_detection, region_to_category_classification, region_to_description, optical_character_recognition, chunking, audioextraction, key_frame_extraction, face_extraction, entity_recognition
-    task_properties: # These are the properties of the task, would depend on the task_type but would always be key value pairs
-      max_tokens: 100
-      model: gpt-3.5-turbo
-      prompt: Extract the invoice data from the document {invoice}
-
-  extract_document_info:
-    task_type: generation
-    task_properties:
-      max_tokens: 100
-      model: gpt-3.5-turbo
-      prompt: Extract the document information from the document
-
-  generate_invoice_questions:
-    task_type: generation
-    task_properties:
-      max_tokens: 100
-      model: gpt-3.5-turbo
-      prompt: Generate questions about the invoice items
 
 # Define the types that will be used in the dataset
 types:
@@ -103,9 +63,45 @@ types:
         question: string
         answer: string
 
+  document_text:
+    type: string
+
+# Define the tasks that will be used in Dataset generation, and their properties
+tasks:
+  extract_invoice_data: # This is the task_id
+    task_type: generation # This is the type of the task, task_type could be one of diarization, generation, transcription, categorization, embedding, captioning, object_detection, dense_region_captioning, region_proposal, caption_to_phrase_grounding, referring_expression_segmentation, region_to_segmentation, open_vocabulary_detection, region_to_category_classification, region_to_description, optical_character_recognition, chunking, audioextraction, key_frame_extraction, face_extraction, entity_recognition
+    task_properties: # These are the properties of the task, would depend on the task_type but would always be key value pairs
+      max_tokens: 100
+      model: gpt-3.5-turbo
+      prompt: Extract the invoice data from the document {invoice}
+
+  extract_document_info:
+    task_type: generation
+    task_properties:
+      max_tokens: 100
+      model: gpt-3.5-turbo
+      prompt: Extract the document information from the document
+
+  generate_invoice_questions:
+    task_type: generation
+    task_properties:
+      max_tokens: 100
+      model: gpt-3.5-turbo
+      prompt: Generate questions about the invoice items
+
+  pdf_parsing:
+    task_type: optical_character_recognition
+    task_properties:
+      output: markdown
+      path: /path/to/first/directory
+
 # Define the columns that will be used in the dataset
 columns:
-  # Define the columns that will be used in the dataset, and their properties
+  invoice:
+    column_type: document_text
+    description: Invoice text
+    task_id: pdf_parsing
+
   document_id: # column_name
     column_type: document_id # This references the type_id or could be one of string, integer, integer, boolean. doesn't allow object, array. must be defined in the types.
     description: ID of the document # Description of the column
