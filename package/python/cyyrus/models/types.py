@@ -6,6 +6,7 @@ from pydantic.fields import Field
 from pydantic.functional_validators import model_validator
 from typing import Any, Dict, Union, Optional, List, Type
 from enum import Enum
+
 from cyyrus.errors.schema import InvalidTypeError, MaximumDepthExceededError
 
 
@@ -16,6 +17,8 @@ class DataType(str, Enum):
     BOOLEAN = "boolean"
     OBJECT = "object"
     ARRAY = "array"
+    IMAGE = "image"
+    AUDIO = "audio"
 
 
 class ObjectProperty(BaseModel):
@@ -77,6 +80,14 @@ def get_python_type(type_string: str) -> type:
     return TYPE_MAPPING.get(type_string.lower(), Any)
 
 
+def get_binary_type(type_string: str) -> type:
+    TYPE_MAPPING = {
+        "image": str,  # image and audio files are base64 encoded strings
+        "audio": str,
+    }
+    return TYPE_MAPPING.get(type_string.lower(), Any)  # type: ignore
+
+
 def create_dynamic_type(
     type_def: Dict[str, Any], depth: int = 0, max_depth: int = 5
 ) -> type[BaseModel]:
@@ -95,6 +106,9 @@ def create_dynamic_type(
     elif type_def["type"] == "array":
         item_type = create_dynamic_type(type_def["items"], depth + 1, max_depth)
         return create_model(f"ArrayModel_{depth}", items=(List[item_type], ...))
+    elif type_def["type"] in ["image", "audio"]:
+        python_type = get_binary_type(type_def["type"])
+        return create_model(f"FileModel_{type_def['type']}_{depth}", value=(python_type, ...))
     else:
         python_type = get_python_type(type_def["type"])
         return create_model(f"PrimitiveModel_{type_def['type']}_{depth}", value=(python_type, ...))

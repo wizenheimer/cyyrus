@@ -54,16 +54,15 @@ class Composer:
         task_infos = {}
 
         for column_name, task_type, task_properties, task_input, dynamic_model in task_info_list:
-            if task_type != TaskType.NONE and (task_properties or task_input):
-                task_key = TaskInfo(
-                    task_type=task_type,
-                    task_properties=tuple(sorted(task_properties.items())),
-                    task_input=tuple(sorted(task_input.items())),
-                )
-                grouped_columns[task_key].append(column_name)
-                if dynamic_model:
-                    models[column_name] = dynamic_model
-                task_infos[task_key] = task_key
+            task_key = TaskInfo(
+                task_type=task_type,
+                task_properties=tuple(sorted(task_properties.items())),
+                task_input=tuple(sorted(task_input.items())),
+            )
+            grouped_columns[task_key].append(column_name)
+            if dynamic_model:
+                models[column_name] = dynamic_model
+            task_infos[task_key] = task_key
 
         nested_models = {}
         for task_key, columns in grouped_columns.items():
