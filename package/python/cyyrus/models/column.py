@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict
+from typing import Dict, List
 
 from pydantic import BaseModel, Field
 
@@ -26,7 +26,7 @@ class Column(BaseModel):
         ...,
         description="ID of the task associated with the column",
     )
-    task_input: Dict[str, str] = Field(
+    task_input: List[str] = Field(
         default={},
         description="Input to the task",
     )

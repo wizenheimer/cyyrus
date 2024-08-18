@@ -5,6 +5,9 @@ from pydantic import BaseModel
 
 
 class TaskType(str, Enum):
+    # === Sentinel Tasks ===
+    NONE = "none"
+
     # === General Tasks ===
     PARSING = "parsing"  # Ingest and interpret data from different types.
     REFORMATTING = "reformatting"  # Convert data between different formats (e.g., CSV to JSON).

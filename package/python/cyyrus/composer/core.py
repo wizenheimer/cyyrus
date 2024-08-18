@@ -63,7 +63,6 @@ class Composer:
     ):
         # Iterate over each level in the spec
         for level_index, level in enumerate(self.spec.levels()):
-
             # Merge tasks in the level
             task_groups = self._group_tasks(level)
 
@@ -82,18 +81,18 @@ class Composer:
                 str,
                 TaskType,
                 Dict[str, int | str | float],
-                Dict[str, str],
+                List[str],
                 Any | None,
-            ],
+            ]
         ],
-    ) -> List[Dict[str, Any]]:  # type: ignore
+    ) -> List[Dict[str, Any]]:
         task_groups = defaultdict(
             lambda: {
                 "columns": [],
                 "models": {},
                 "output_columns": [],
                 "input_columns": [],
-                "task_type": None,
+                "task_type": TaskType.NONE,
                 "task_properties": {},
             }
         )
@@ -101,14 +100,14 @@ class Composer:
         # Iterate over each task in the level, and group them by task type, properties, and input
         for column_name, task_type, task_properties, task_input, dynamic_model in level:
             # Create a unique key for each bucket
-            key = (task_type, frozenset(task_properties.items()), frozenset(task_input.items()))
+            key = (task_type, frozenset(task_properties.items()), frozenset(task_input))
 
             # Column Parameters
             task_groups[key]["output_columns"].append(column_name)  # type: ignore
-            task_groups[key]["input_columns"] = task_input.keys()  # type: ignore
+            task_groups[key]["input_columns"] = task_input
 
             # Task Parameters
-            task_groups[key]["task_type"] = task_type  # type: ignore
+            task_groups[key]["task_type"] = task_type
             task_groups[key]["task_properties"] = task_properties
 
             # Add dynamic model to the bucket

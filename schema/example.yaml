@@ -106,26 +106,22 @@ columns:
     column_type: document_id # This references the type_id or could be one of string, integer, integer, boolean. doesn't allow object, array. must be defined in the types.
     description: ID of the document # Description of the column
     task_id: extract_document_info # Task_id that will be used to generate the data
-    task_input: # Input to the task, optional depending on the task, but always a key value pair
-      invoice: invoice # Determines the depends_on property based on this, should be one of the column names
+    task_input: [invoice]
 
   document_info:
     column_type: document_info
     description: Information about the document
     task_id: extract_document_info
-    task_input:
-      invoice: invoice # Determines the depends_on property based on this
+    task_input: [invoice]
 
   invoice_items:
     column_type: invoice_items
     description: Array of invoice items
     task_id: extract_invoice_data
-    task_input:
-      invoice: invoice # Determines the depends_on property based on this
+    task_input: [invoice]
 
   invoice_questions:
     column_type: invoice_questions
     description: Questions about the invoice items
     task_id: generate_invoice_questions
-    task_input:
-      invoice_items: invoice_items # Determines the depends_on property based on this
+    task_input: [invoice_items]

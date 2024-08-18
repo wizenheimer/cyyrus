@@ -1,6 +1,6 @@
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Set, Tuple, Union
+from typing import Any, Dict, Generator, List, Set, Tuple, Union
 from urllib.parse import urlparse
 
 import requests
@@ -35,8 +35,7 @@ class Spec(BaseModel):
 
     def extract_dag_representation(self) -> Dict[str, List[str]]:
         return {
-            column_name: list(column.task_input.keys())
-            for column_name, column in self.columns.items()
+            column_name: list(column.task_input) for column_name, column in self.columns.items()
         }
 
     @model_validator(mode="after")
@@ -122,7 +121,7 @@ class Spec(BaseModel):
     def extract_task_info(
         self,
         column_name: str,
-    ) -> Tuple[str, TaskType, Dict[str, Union[int, str, float]], Dict[str, str], Union[Any, None]]:
+    ) -> Tuple[str, TaskType, Dict[str, Union[int, str, float]], List[str], Union[Any, None]]:
         column = self.columns.get(column_name)
 
         if not column:
@@ -164,7 +163,11 @@ class Spec(BaseModel):
 
     def levels(
         self,
-    ):
+    ) -> Generator[
+        List[Tuple[str, TaskType, Dict[str, Union[int, str, float]], List[str], Union[Any, None]]],
+        None,
+        None,
+    ]:
         # Extract the DAG representation
         dependencies: Dict[str, List[str]] = self.extract_dag_representation()
 
