@@ -1,16 +1,22 @@
 from collections import defaultdict
-from pydantic import BaseModel, model_validator
-from typing import Any, Dict, List, Set, Tuple, Union
-import yaml
-import requests
 from pathlib import Path
+from typing import Any, Dict, List, Set, Tuple, Union
 from urllib.parse import urlparse
-from cyyrus.errors.schema import (
+
+import requests
+import yaml
+from pydantic import BaseModel, model_validator
+
+from cyyrus.errors.column import (
     ColumnIDNotFoundError,
     ColumnTaskIDNotFoundError,
     ColumnTypeNotFoundError,
+)
+from cyyrus.errors.schema import (
     SchemaFileNotFoundError,
     SchemaParsingError,
+)
+from cyyrus.errors.task import (
     TaskCyclicDependencyError,
 )
 from cyyrus.models.column import Column

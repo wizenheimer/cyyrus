@@ -1,9 +1,14 @@
 import warnings
-from pydantic import BaseModel, Field, field_validator
-from typing import List, Optional
 from enum import Enum
+from typing import List, Optional, Tuple
 
-from cyyrus.errors.schema import DatasetSplitsDontAddUpError
+from pydantic import BaseModel, Field, field_validator
+from pydantic.functional_validators import model_validator
+
+from cyyrus.errors.dataset import (
+    SplitsDontAddUpWarning,
+    SplitValueInvalidWarning,
+)
 
 
 class SpecVersion(str, Enum):
@@ -29,19 +34,6 @@ class DatasetMetadata(BaseModel):
         default="MIT",
         description="License for the dataset",
     )
-    language: str = Field(
-        default="en",
-        description="Language of the dataset",
-    )
-
-
-class DatasetSampling(BaseModel):
-    percentage: float = Field(
-        default=1,
-        gt=0,
-        le=1,
-        description="Percentage of the dataset to sample",
-    )
 
 
 class DatasetShuffle(BaseModel):
@@ -49,57 +41,105 @@ class DatasetShuffle(BaseModel):
         default=42,
         description="Seed for the random number generator",
     )
-    buffer_size: int = Field(
-        default=1000,
-        gt=0,
-        description="Buffer size for shuffling",
-    )
 
 
 class DatasetSplits(BaseModel):
     train: Optional[float] = Field(
-        default=0.8,
+        default=None,
         ge=0,
         le=1,
         description="Percentage of the dataset to use for training",
     )
     test: Optional[float] = Field(
-        default=0.1,
+        default=None,
         ge=0,
         le=1,
         description="Percentage of the dataset to use for testing",
     )
-    validation: Optional[float] = Field(
-        default=0.1,
-        ge=0,
-        le=1,
-        description="Percentage of the dataset to use for validation",
+    seed: Optional[int] = Field(
+        default=42,
+        description="Seed for the random number generator",
     )
 
-    @field_validator("test", "validation", mode="after")
-    @classmethod
-    def check_splits_sum(cls, v, info):
-        values = info.data
-        total = sum(
-            filter(
-                None,
-                [
-                    values.get("train", 0),
-                    v,
-                    values.get("validation" if v == values.get("test") else "test", 0),
-                ],
+    @model_validator(mode="after")
+    def check_splits_sum(cls, values):
+        train, test = values.train, values.test
+
+        if train is None and test is None:
+            values.train, values.test = 0.8, 0.2
+            warnings.warn(
+                SplitValueInvalidWarning(
+                    extra_info={
+                        "new train split": 0.8,
+                        "new test split": 0.2,
+                        "old train split": train,
+                        "old test split": test,
+                    }
+                )
             )
-        )
-        if total > 1:
-            warnings.warn(DatasetSplitsDontAddUpError())
-            # Normalize the splits if they don't add up to 1
-            v = v / total
-            values["train"] = values.get("train", 0) / total
-            values["validation"] = values.get("validation", 0) / total
-            values["test"] = values.get("test", 0) / total
+        elif train is None:
+            values.train = max(0, 1 - test)
+            warnings.warn(
+                SplitValueInvalidWarning(
+                    extra_info={
+                        "new train split": values.train,
+                        "new test split": test,
+                        "old train split": train,
+                        "old test split": test,
+                    }
+                )
+            )
+        elif test is None:
+            values.test = max(0, 1 - train)
+            warnings.warn(
+                SplitValueInvalidWarning(
+                    extra_info={
+                        "new train split": train,
+                        "new test split": values.test,
+                        "old train split": train,
+                        "old test split": test,
+                    }
+                )
+            )
 
-            return v
+        normalized = cls.normalize_split_sizes(values.train, values.test)
+        values.train, values.test = normalized
 
+        return values
+
+    @staticmethod
+    def normalize_split_sizes(
+        train_size: float,
+        test_size: float,
+    ) -> Tuple[float, float]:
+        total = train_size + test_size
+        if total <= 0:
+            warnings.warn(
+                SplitsDontAddUpWarning(
+                    extra_info={
+                        "new train split": 0.8,
+                        "new test split": 0.2,
+                        "old train split": train_size,
+                        "old test split": test_size,
+                    }
+                )
+            )
+            return 0.8, 0.2
+        return round(train_size / total, 3), round(test_size / total, 3)
+
+    @field_validator("train", "test")
+    @classmethod
+    def check_not_negative(cls, v: Optional[float]) -> Optional[float]:
+        if v is not None and v < 0:
+            warnings.warn(
+                SplitValueInvalidWarning(
+                    extra_info={
+                        "old value": v,
+                        "new value": abs(v),
+                    }
+                )
+            )
+            return abs(v)
         return v
 
 
@@ -117,11 +157,6 @@ class DatasetAttributes(BaseModel):
         pattern="^(include|exclude)$",
         description="How to handle null values",
     )
-    references: str = Field(
-        default="include",
-        pattern="^(include|exclude)$",
-        description="How to handle references",
-    )
 
 
 class Dataset(BaseModel):
@@ -129,16 +164,12 @@ class Dataset(BaseModel):
         default_factory=DatasetMetadata,
         description="Metadata for the dataset",
     )
-    sampling: DatasetSampling = Field(
-        default_factory=DatasetSampling,
-        description="Sampling configuration for the dataset",
-    )
     shuffle: DatasetShuffle = Field(
         default_factory=DatasetShuffle,
         description="Shuffle configuration for the dataset",
     )
     splits: DatasetSplits = Field(
-        default_factory=DatasetSplits,  # type: ignore
+        default_factory=DatasetSplits,
         description="Splits for the dataset",
     )
     attributes: DatasetAttributes = Field(

@@ -1,6 +1,7 @@
-from pydantic import BaseModel
-from typing import Dict, Union
 from enum import Enum
+from typing import Dict, Union
+
+from pydantic import BaseModel
 
 
 class TaskType(str, Enum):

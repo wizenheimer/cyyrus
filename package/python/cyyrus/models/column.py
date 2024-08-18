@@ -1,6 +1,7 @@
-from typing import Dict
-from pydantic import BaseModel, Field
 from enum import Enum
+from typing import Dict
+
+from pydantic import BaseModel, Field
 
 
 class ReferenceType(str, Enum):

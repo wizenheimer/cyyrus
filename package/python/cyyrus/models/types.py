@@ -1,13 +1,14 @@
+from enum import Enum
+from typing import Any, Dict, List, Optional, Type, Union
+
 from pydantic import (
     BaseModel,
     create_model,
 )
 from pydantic.fields import Field
 from pydantic.functional_validators import model_validator
-from typing import Any, Dict, Union, Optional, List, Type
-from enum import Enum
 
-from cyyrus.errors.schema import InvalidTypeError, MaximumDepthExceededError
+from cyyrus.errors.types import InvalidTypeError, MaximumDepthExceededError
 
 
 class DataType(str, Enum):
