@@ -1,10 +1,12 @@
+import os
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, Generator, List, Set, Tuple, Union
+from typing import Any, Dict, Generator, List, Optional, Set, Tuple, Union
 from urllib.parse import urlparse
 
 import requests
 import yaml
+from dotenv import load_dotenv
 from pydantic import BaseModel, model_validator
 
 from cyyrus.errors.column import (
@@ -175,23 +177,56 @@ class Spec(BaseModel):
             yield [self.extract_task_info(node) for node in level]
 
 
-def load_spec(path_or_url: str) -> Spec:
+def env_var_constructor(loader, node):
+    value = loader.construct_scalar(node)
+    return os.environ.get(value, value)
+
+
+def load_spec(
+    path_or_url: str,
+    env_file: Optional[str] = None,
+) -> Spec:
     """
-    Load a spec from either a local file path or a URL.
+    Load a spec from either a local file path or a URL, with support for environment variables.
     """
+    # Load environment variables from .env file if specified
+    if env_file:
+        load_dotenv(env_file)
+
+    # Add custom constructor for environment variables
+    yaml.add_constructor("!env", env_var_constructor)
+
     # Check if the source is a URL
     parsed_url = urlparse(path_or_url)
     if parsed_url.scheme and parsed_url.netloc:
         # It's a URL, so use requests to fetch the content
-        response = requests.get(path_or_url)
-        response.raise_for_status()  # Raise an exception for HTTP errors
-        yaml_content = response.text
+        try:
+            response = requests.get(path_or_url)
+            response.raise_for_status()  # Raise an exception for HTTP errors
+            yaml_content = response.text
+        except requests.RequestException as e:
+            raise SchemaFileNotFoundError(
+                extra_info={
+                    "error": str(e),
+                }
+            )
     elif Path(path_or_url).is_file():
         # It's a local file, so read its content
-        with open(path_or_url, "r") as file:
-            yaml_content = file.read()
+        try:
+            with open(path_or_url, "r") as file:
+                yaml_content = file.read()
+        except IOError as e:
+            raise SchemaFileNotFoundError(
+                extra_info={
+                    "error": str(e),
+                }
+            )
     else:
-        raise SchemaFileNotFoundError()
+        raise SchemaFileNotFoundError(
+            extra_info={
+                "unrecognized path": path_or_url,
+            }
+        )
 
     # Parse the YAML content
     try:
