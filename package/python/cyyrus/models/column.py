@@ -27,6 +27,6 @@ class Column(BaseModel):
         description="ID of the task associated with the column",
     )
     task_input: List[str] = Field(
-        default={},
+        default=[],
         description="Input to the task",
     )
