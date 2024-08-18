@@ -52,7 +52,7 @@ multidict==6.0.5
     #   yarl
 multiprocess==0.70.16
     # via datasets
-numpy==2.0.1
+numpy==2.1.0
     # via
     #   datasets
     #   pandas
