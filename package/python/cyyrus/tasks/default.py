@@ -10,4 +10,4 @@ class DefaultTask(BaseTask):
         self,
         task_input: Dict[str, Any],
     ):
-        pass
+        return self.task_model()  # type: ignore

@@ -10,20 +10,18 @@ class BaseTask(ABC):
         task_properties: Dict[str, Any],
         task_model: Optional[Any] = None,
     ) -> None:
-        super().__init__()
+        self.task_properties = task_properties
+        self.task_model = task_model
 
     def execute(
         self,
         task_input: Dict[str, Any],
     ) -> Any:
-        # TODO: trigger self._execute() method using the task_input
-        # TODO: merge it with the task_inputs
-        # TODO: return the merged result
-        pass
+        return self._execute(task_input)
 
     @abstractmethod
     def _execute(
         cls,
         task_input: Dict[str, Any],
-    ):
+    ) -> Any:
         pass

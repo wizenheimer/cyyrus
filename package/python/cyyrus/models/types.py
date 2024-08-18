@@ -113,39 +113,3 @@ def create_dynamic_type(
     else:
         python_type = get_python_type(type_def["type"])
         return create_model(f"PrimitiveModel_{type_def['type']}_{depth}", value=(python_type, ...))
-
-
-def create_nested_model(
-    models: Dict[str, Type[BaseModel]],
-    new_model_name: str = "NestedModel",
-) -> Type[BaseModel]:
-    """
-    Create a new Pydantic model that nests the given models as fields.
-
-    :param models: A list of Pydantic model classes to be nested
-    :param new_model_name: The name for the new model (default: "NestedModel")
-    :return: A new Pydantic model class with nested fields
-    """
-    field_definitions = {model_name: (model, ...) for model_name, model in models.items()}
-
-    return create_model(new_model_name, **field_definitions)  # type: ignore
-
-
-def unnest_model(
-    nested_instance: BaseModel,
-    models: Dict[str, Type[BaseModel]],
-) -> Dict[str, BaseModel]:
-    """
-    Take an instance of a nested model and a list of model classes,
-    and return instances of those individual models.
-
-    :param nested_instance: An instance of a nested Pydantic model
-    :param models: A list of Pydantic model classes to unnest
-    :return: A dictionary of unnested model instances
-    """
-    unnested = {}
-    for model_name in models.keys():
-        field_name = model_name
-        if hasattr(nested_instance, field_name):
-            unnested[field_name] = getattr(nested_instance, field_name).dict()
-    return unnested
