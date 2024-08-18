@@ -1,10 +1,20 @@
+import importlib
+import inspect
 import warnings
 from collections import defaultdict
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    DefaultDict,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+)
 
 import pandas as pd
 from datasets import Dataset, DatasetDict
-from pydantic.main import BaseModel
+from pydantic.main import BaseModel, create_model
 
 from cyyrus.composer.dataframe import (
     ensure_required_columns,
@@ -19,38 +29,166 @@ from cyyrus.errors.composer import (
 )
 from cyyrus.models.spec import Spec
 from cyyrus.models.task import TaskType
-from cyyrus.models.types import create_nested_model
-
-
-class TaskInfo(NamedTuple):
-    task_type: str
-    task_properties: Tuple[Tuple[str, Union[int, str, float]], ...]
-    task_input: Tuple[Tuple[str, str], ...]
+from cyyrus.tasks.base import BaseTask
 
 
 class Composer:
     def __init__(self, spec: Spec) -> None:
         self.spec: Spec = spec
         self.dataframe: pd.DataFrame = pd.DataFrame()
+        self.task_artifacts = self._infer_tasks()
 
-    def compose(self):
-        """
-        This method is the main entry point for composing nested models. It:
+    def _infer_tasks(
+        self,
+    ) -> DefaultDict[str, Type[BaseTask]]:
+        try:
+            module = importlib.import_module("cyyrus.tasks")
+        except ImportError:
+            raise
+        else:
+            from cyyrus.tasks.base import BaseTask
+            from cyyrus.tasks.default import DefaultTask
 
-        1. Iterates through each level of the specification
-        2. Creates nested models for each level
-        3. Prints detailed information about each nested model
-        """
+            task_dict = defaultdict(lambda: DefaultTask)
+
+            for _, cls in inspect.getmembers(module, inspect.isclass):
+                if (hasattr(cls, "TASK_ID") and issubclass(cls, BaseTask)) and cls != BaseTask:
+                    task_dict[cls.TASK_ID] = cls  # type: ignore
+
+            return task_dict  # type: ignore
+
+    def compose(
+        self,
+        dry_run: bool = False,
+    ):
+        # Iterate over each level in the spec
         for level_index, level in enumerate(self.spec.levels()):
-            nested_models = self._create_nested_models_for_level(level, level_index)
-            for task_info, model in nested_models.items():
-                print(f"Level: {level_index}")
-                print(f"Task Type: {task_info.task_type}")
-                print(f"Task Properties: {dict(task_info.task_properties)}")
-                print(f"Task Input: {dict(task_info.task_input)}")
-                print(f"Nested model: {model.__name__}")
-                print(f"Fields: {model.model_fields.keys()}")
-                print("---")
+
+            # Merge tasks in the level
+            task_groups = self._group_tasks(level)
+
+            # Iterate over each task_dump in the merged_task_list
+            for task_group in task_groups:
+                self.execute(
+                    task_group,
+                    level_index,
+                    dry_run,
+                )
+
+    def _group_tasks(
+        self,
+        level: List[
+            Tuple[
+                str,
+                TaskType,
+                Dict[str, int | str | float],
+                Dict[str, str],
+                Any | None,
+            ],
+        ],
+    ) -> List[Dict[str, Any]]:  # type: ignore
+        task_groups = defaultdict(
+            lambda: {
+                "columns": [],
+                "models": {},
+                "output_columns": [],
+                "input_columns": [],
+                "task_type": None,
+                "task_properties": {},
+            }
+        )
+
+        # Iterate over each task in the level, and group them by task type, properties, and input
+        for column_name, task_type, task_properties, task_input, dynamic_model in level:
+            # Create a unique key for each bucket
+            key = (task_type, frozenset(task_properties.items()), frozenset(task_input.items()))
+
+            # Column Parameters
+            task_groups[key]["output_columns"].append(column_name)  # type: ignore
+            task_groups[key]["input_columns"] = task_input.keys()  # type: ignore
+
+            # Task Parameters
+            task_groups[key]["task_type"] = task_type  # type: ignore
+            task_groups[key]["task_properties"] = task_properties
+
+            # Add dynamic model to the bucket
+            if dynamic_model:
+                task_groups[key]["models"][column_name] = dynamic_model  # type: ignore
+
+        return list(task_groups.values())
+
+    def execute(
+        self,
+        task_group: Dict[str, Any],
+        level_index: int,
+        dry_run: bool = False,
+    ):
+        task_type = task_group["task_type"]
+        task_properties = task_group["task_properties"]
+
+        origin_models = task_group["models"]
+        nested_model = (
+            self._nest_model(
+                origin_models,
+                task_group["task_type"],
+                level_index,
+            )
+            if origin_models
+            else None
+        )
+
+        task_instance = self.task_artifacts[task_type](
+            task_properties=task_properties,
+            task_model=nested_model,
+        )
+
+        input_columns = task_group["input_columns"]
+        task_inputs = self._import_columns(columns=input_columns)
+
+        if dry_run:
+            return
+
+        task_results = []
+        for task_input in task_inputs:
+            task_output = task_instance.execute(task_input)
+            flattened_output = self._unnest_model(task_output, origin_models)
+            merged_output = task_input | flattened_output
+            task_results.append(merged_output)
+
+        self._merge_columns(
+            column_data=task_results,
+            key_columns=input_columns,
+        )
+
+    def _nest_model(
+        self,
+        origin_models: Dict[str, BaseModel],
+        task_type: str,
+        level_index: int,
+    ) -> BaseModel:
+        model_name = f"Level{level_index}_{task_type.capitalize()}Model"
+        return create_model(model_name, **{name: (model, ...) for name, model in origin_models.items()})  # type: ignore
+
+    def _unnest_model(
+        self,
+        nested_instance: BaseModel,
+        origin_models: Dict[str, Type[BaseModel]],
+    ) -> Dict[str, BaseModel]:
+        """
+        Take an instance of a nested model and a list of model classes,
+        and return instances of those individual models.
+
+        :param nested_instance: An instance of a nested Pydantic model
+        :param models: A list of Pydantic model classes to unnest
+        :return: A dictionary of unnested model instances
+        """
+
+        unnested = {}
+        for model_name in origin_models.keys():
+            field_name = model_name
+            if hasattr(nested_instance, field_name):
+                unnested[field_name] = getattr(nested_instance, field_name).dict()
+        return unnested
 
     def export(
         self,
@@ -91,71 +229,9 @@ class Composer:
 
         return hf_dataset
 
-    def _create_nested_models_for_level(
+    def _import_columns(
         self,
-        task_info_list: List[
-            Tuple[str, TaskType, Dict[str, Union[int, str, float]], Dict[str, str], Any]
-        ],
-        level_index: int,
-    ) -> Dict[TaskInfo, Type[BaseModel]]:
-        """
-        This method does the heavy lifting of creating nested models for a single level. It:
-
-        1. Groups columns by their associated tasks
-        2. Creates a nested model for each group of columns with the same task
-        3. Returns a dictionary mapping TaskInfo objects to their corresponding nested models
-        """
-        grouped_columns = defaultdict(list)
-        models = {}
-        task_infos = {}
-
-        for column_name, task_type, task_properties, task_input, dynamic_model in task_info_list:
-            task_key = TaskInfo(
-                task_type=task_type,
-                task_properties=tuple(sorted(task_properties.items())),
-                task_input=tuple(sorted(task_input.items())),
-            )
-            grouped_columns[task_key].append(column_name)
-            if dynamic_model:
-                models[column_name] = dynamic_model
-            task_infos[task_key] = task_key
-
-        nested_models = {}
-        for task_key, columns in grouped_columns.items():
-            task_models = {col: models[col] for col in columns if col in models}
-            if task_models:
-                nested_model = self._create_nested_model(task_models, task_key, level_index)
-                nested_models[task_infos[task_key]] = nested_model
-
-        return nested_models
-
-    def _create_nested_model(
-        self,
-        models: Dict[str, Type[BaseModel]],
-        task_key: TaskInfo,
-        level_index: int,
-    ) -> Type[BaseModel]:
-        """
-        This method creates a single nested model. It:
-
-        1. Generates a descriptive name for the model based on the level, task, and columns
-        2. Calls create_nested_model to create the actual Pydantic model
-        3. Returns the created model
-        """
-        # Create a descriptive name for the nested model
-        column_names = "_".join(sorted(models.keys()))
-        task_name = task_key.task_type.lower()
-        model_name = f"Level{level_index}_{task_name.capitalize()}Model_{column_names}"
-
-        # Truncate the name if it's too long
-        if len(model_name) > 100:
-            model_name = model_name[:97] + "..."
-
-        return create_nested_model(models, model_name)
-
-    def _export_column_names(
-        self,
-        columns_to_export: Optional[str] = None,
+        columns: Optional[List[str]] = None,
     ) -> List[Dict[str, Any]]:
         """
         This method exports column names from the dataframe. It:
@@ -165,11 +241,11 @@ class Composer:
         3. Returns the exported column names
         """
         # Check if the dataframe is empty or no columns are specified
-        if self.dataframe.empty or not columns_to_export:
+        if self.dataframe.empty or not columns:
             return []
 
         # Check if all column names are valid
-        invalid_column_names = set(columns_to_export) - set(self.dataframe.columns)
+        invalid_column_names = set(columns) - set(self.dataframe.columns)
         if invalid_column_names:
             raise InvalidKeyColumnError(
                 extra_info={
@@ -180,8 +256,8 @@ class Composer:
 
         # Export only the specified columns
         result = [
-            {k: v for k, v in row.items() if k in columns_to_export}
-            for row in self.dataframe[columns_to_export].to_dict("records")  # type: ignore
+            {k: v for k, v in row.items() if k in columns}
+            for row in self.dataframe[columns].to_dict("records")  # type: ignore
             if all(pd.notna(v) for v in row.values())
         ]
 
@@ -191,7 +267,7 @@ class Composer:
 
         return result
 
-    def _merge_column(
+    def _merge_columns(
         self,
         column_data: List[Dict[str, Any]],
         key_columns: List[str],
