@@ -10,20 +10,15 @@ dataset:
     license: CC-BY-NC-SA # License of the dataset
     language: en # Language of the dataset
 
-  # Define the sampling strategy for the dataset
-  sampling:
-    percentage: 0.1
-
   # Define how to shuffle the dataset
   shuffle:
     seed: 42
-    buffer_size: 1000
 
   # Define the splits of the dataset
   splits:
     train: 0.8 # The sum of all splits should be 1, if not specified the remaining data will be used for training. Could be named train, training
-    test: 0.1 # The sum of all splits should be 1, if not specified the remaining data will be used for training. Could be named test, testing, eval, evaluation
-    validation: 0.1 # The sum of all splits should be 1, if not specified the remaining data will be used for training. Could be named validation, valid, val, dev
+    test: 0.2 # The sum of all splits should be 1, if not specified the remaining data will be used for training. Could be named test, testing, eval, evaluation
+    seed: 42 # Seed for the split
 
   # Define the attributes of the dataset
   attributes:
@@ -36,7 +31,6 @@ dataset:
       ] # List of required columns. If any of these columns are missing, the dataset will not be generated
     unique_columns: [document_id] # If there are any unique columns, specify them here. Non unique columns will be removed from the dataset
     nulls: include # Whether or not to include null values in the dataset, include, exclude, special_token
-    references: include # Whether or not to include the references in the dataset columns, include, exclude
 
 # Define the types that will be used in the dataset
 types:
