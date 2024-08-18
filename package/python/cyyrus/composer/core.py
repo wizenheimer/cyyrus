@@ -1,8 +1,24 @@
+import warnings
 from collections import defaultdict
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Type, Union
+
+import pandas as pd
+from datasets import Dataset, DatasetDict
 from pydantic.main import BaseModel
-from cyyrus.models.task import TaskType
-from typing import Any, Dict, List, NamedTuple, Tuple, Type, Union
+
+from cyyrus.composer.dataframe import (
+    ensure_required_columns,
+    ensure_unique_columns,
+    handle_nulls,
+    split_dataset,
+)
+from cyyrus.errors.composer import (
+    AllRowsExcludedDueToNanWarning,
+    InvalidKeyColumnError,
+    KeyColumnNotFoundError,
+)
 from cyyrus.models.spec import Spec
+from cyyrus.models.task import TaskType
 from cyyrus.models.types import create_nested_model
 
 
@@ -15,6 +31,7 @@ class TaskInfo(NamedTuple):
 class Composer:
     def __init__(self, spec: Spec) -> None:
         self.spec: Spec = spec
+        self.dataframe: pd.DataFrame = pd.DataFrame()
 
     def compose(self):
         """
@@ -34,6 +51,45 @@ class Composer:
                 print(f"Nested model: {model.__name__}")
                 print(f"Fields: {model.model_fields.keys()}")
                 print("---")
+
+    def export(
+        self,
+    ) -> DatasetDict:
+        # Handle nulls
+        df = handle_nulls(self.dataframe, self.spec.dataset.attributes.nulls)
+
+        # Ensure required columns and unique columns
+        df = ensure_required_columns(df, self.spec.dataset.attributes.required_columns)
+        df = ensure_unique_columns(df, self.spec.dataset.attributes.unique_columns)
+
+        # Convert to Hugging Face Dataset
+        dataset = Dataset.from_pandas(df)
+
+        # Shuffle the dataset
+        dataset = dataset.shuffle(seed=self.spec.dataset.shuffle.seed)
+
+        # Split the dataset
+        train_set, test_set = split_dataset(
+            dataset,
+            self.spec.dataset.splits.train or 0.8,  # default to 0.8 if not specified
+            self.spec.dataset.splits.test or 0.2,  # default to 0.2 if not specified
+            self.spec.dataset.splits.seed or 42,  # default to 42 if not specified
+        )
+
+        # Create DatasetDict
+        hf_dataset = DatasetDict(
+            {
+                "train": train_set,
+                "test": test_set,
+            },
+        )
+
+        # Set dataset metadata
+        for split in hf_dataset.values():
+            split.info.description = self.spec.dataset.metadata.description
+            split.info.license = self.spec.dataset.metadata.license
+
+        return hf_dataset
 
     def _create_nested_models_for_level(
         self,
@@ -96,3 +152,73 @@ class Composer:
             model_name = model_name[:97] + "..."
 
         return create_nested_model(models, model_name)
+
+    def _export_column_names(
+        self,
+        columns_to_export: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        This method exports column names from the dataframe. It:
+
+        1. Exports all column names if column_names is None
+        2. Exports only the specified column names if column_names is provided
+        3. Returns the exported column names
+        """
+        # Check if the dataframe is empty or no columns are specified
+        if self.dataframe.empty or not columns_to_export:
+            return []
+
+        # Check if all column names are valid
+        invalid_column_names = set(columns_to_export) - set(self.dataframe.columns)
+        if invalid_column_names:
+            raise InvalidKeyColumnError(
+                extra_info={
+                    "invalid_column_names": list(invalid_column_names),
+                    "valid_column_names": list(self.dataframe.columns),
+                }
+            )
+
+        # Export only the specified columns
+        result = [
+            {k: v for k, v in row.items() if k in columns_to_export}
+            for row in self.dataframe[columns_to_export].to_dict("records")  # type: ignore
+            if all(pd.notna(v) for v in row.values())
+        ]
+
+        # Check if all rows were excluded due to NaN values
+        if not result:
+            warnings.warn(AllRowsExcludedDueToNanWarning())
+
+        return result
+
+    def _merge_column(
+        self,
+        column_data: List[Dict[str, Any]],
+        key_columns: List[str],
+    ):
+        """
+        Update an existing DataFrame with new columns from new_data,
+        using key_columns to determine where to merge the new information.
+
+        :param df_existing: Existing DataFrame to update
+        :param new_data: List of dictionaries containing new data
+        :param key_columns: List of column names to use as keys for merging
+        :return: Updated DataFrame
+        """
+        # Convert column_data to a DataFrame
+        df_new = pd.DataFrame(column_data)
+
+        # Validate key_columns
+        if not set(key_columns).issubset(self.dataframe.columns) or not set(key_columns).issubset(
+            df_new.columns
+        ):
+            raise KeyColumnNotFoundError(
+                extra_info={
+                    "key_columns": key_columns,
+                    "existing_columns": self.dataframe.columns,
+                    "new_columns": df_new.columns,
+                }
+            )
+
+        # Perform a left merge to update existing rows and add new columns
+        self.dataframe = self.dataframe.merge(df_new, on=key_columns, how="left")
