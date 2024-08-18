@@ -236,3 +236,24 @@ clean:
 	@echo "== Cleaning distributable artifacts =="
 	@rm -rf $(DIST_DIR)
 	@echo "== Clean process completed =="
+
+
+# ================================================================================
+# 								Debug
+# =================================================================================
+
+
+# Debug target
+.PHONY: debug
+
+EXPORT ?= false
+DEBUG_FILE := env.debug
+
+# Debug target
+debug:
+ifeq ($(EXPORT),true)
+	@echo -e "# Environment Information\n\n- *Operating System: $(shell uname -a)\n- **Python Version: $(shell python3 --version)\n- **Installed Packages*:\n\n$(shell pip3 freeze)" > $(DEBUG_FILE)
+	@echo "Information exported to $(DEBUG_FILE)"
+else
+	@echo -e "# Environment Information\n\n- *Operating System: $(shell uname -a)\n- **Python Version: $(shell python3 --version)\n- **Installed Packages*:\n\n$(shell pip3 freeze)"
+endif

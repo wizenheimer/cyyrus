@@ -159,3 +159,6 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# Ignore debugging files
+*.debug
