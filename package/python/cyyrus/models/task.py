@@ -5,6 +5,11 @@ from pydantic import BaseModel
 
 
 class TaskType(str, Enum):
+    # === Sentinel Tasks ===
+    DEFAULT = "default"
+    BASE_STATIC = "base_static"
+    BASE_DYNAMIC = "base_dynamic"
+
     # === General Tasks ===
     PARSING = "parsing"  # Ingest and interpret data from different types.
     REFORMATTING = "reformatting"  # Convert data between different formats (e.g., CSV to JSON).
@@ -65,7 +70,11 @@ class TaskType(str, Enum):
 
 class Task(BaseModel):
     task_type: TaskType
-    task_properties: Dict[str, Union[int, str, float]]
-
-
-# TODO: implement validation for task_properties depending on task_type
+    task_properties: Dict[
+        str,
+        Union[
+            int,
+            str,
+            float,
+        ],
+    ]

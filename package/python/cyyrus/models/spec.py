@@ -1,10 +1,12 @@
+import os
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Set, Tuple, Union
+from typing import Any, Dict, Generator, List, Optional, Set, Tuple, Union
 from urllib.parse import urlparse
 
 import requests
 import yaml
+from dotenv import load_dotenv
 from pydantic import BaseModel, model_validator
 
 from cyyrus.errors.column import (
@@ -22,7 +24,7 @@ from cyyrus.errors.task import (
 from cyyrus.models.column import Column
 from cyyrus.models.dataset import Dataset, SpecVersion
 from cyyrus.models.task import Task, TaskType
-from cyyrus.models.types import CustomType, DataType
+from cyyrus.models.types import CustomType, DataType, get_types
 from cyyrus.utils.mermaid import Mermaid
 
 
@@ -33,10 +35,36 @@ class Spec(BaseModel):
     types: Dict[str, CustomType]
     columns: Dict[str, Column]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._populate_types()
+
+    def _populate_types(self):
+        # Iterate over all columns and set the Pydantic model based on the task type and custom type
+        for column in self.columns.values():
+            # Get the task type and custom type
+            column_task = self.tasks.get(
+                column.task_id,
+                Task(
+                    task_type=TaskType.DEFAULT,
+                    task_properties={},
+                ),
+            ).task_type
+            custom_type = self.types.get(
+                column.column_type,
+                CustomType(
+                    type=DataType.DEFAULT,
+                ),
+            )
+            # Set the Pydantic model for the column based on the task type and custom type
+            column.pydantic_model = get_types(
+                task_type=column_task,
+                type_def=custom_type.model_dump(),
+            )
+
     def extract_dag_representation(self) -> Dict[str, List[str]]:
         return {
-            column_name: list(column.task_input.keys())
-            for column_name, column in self.columns.items()
+            column_name: list(column.task_input) for column_name, column in self.columns.items()
         }
 
     @model_validator(mode="after")
@@ -122,7 +150,7 @@ class Spec(BaseModel):
     def extract_task_info(
         self,
         column_name: str,
-    ) -> Tuple[str, TaskType, Dict[str, Union[int, str, float]], Dict[str, str], Union[Any, None]]:
+    ) -> Tuple[str, TaskType, Dict[str, Union[int, str, float]], List[str], Union[Any, None]]:
         column = self.columns.get(column_name)
 
         if not column:
@@ -148,7 +176,7 @@ class Spec(BaseModel):
             task.task_type,
             task.task_properties,
             column.task_input,
-            custom_type.dynamic_model if custom_type else None,
+            column.pydantic_model if custom_type else None,
         )
 
     def generate_mermaid_graph(
@@ -164,7 +192,11 @@ class Spec(BaseModel):
 
     def levels(
         self,
-    ):
+    ) -> Generator[
+        List[Tuple[str, TaskType, Dict[str, Union[int, str, float]], List[str], Union[Any, None]]],
+        None,
+        None,
+    ]:
         # Extract the DAG representation
         dependencies: Dict[str, List[str]] = self.extract_dag_representation()
 
@@ -172,23 +204,56 @@ class Spec(BaseModel):
             yield [self.extract_task_info(node) for node in level]
 
 
-def load_spec(path_or_url: str) -> Spec:
+def env_var_constructor(loader, node):
+    value = loader.construct_scalar(node)
+    return os.environ.get(value, value)
+
+
+def load_spec(
+    path_or_url: str,
+    env_file: Optional[str] = None,
+) -> Spec:
     """
-    Load a spec from either a local file path or a URL.
+    Load a spec from either a local file path or a URL, with support for environment variables.
     """
+    # Load environment variables from .env file if specified
+    if env_file:
+        load_dotenv(env_file)
+
+    # Add custom constructor for environment variables
+    yaml.add_constructor("!env", env_var_constructor)
+
     # Check if the source is a URL
     parsed_url = urlparse(path_or_url)
     if parsed_url.scheme and parsed_url.netloc:
         # It's a URL, so use requests to fetch the content
-        response = requests.get(path_or_url)
-        response.raise_for_status()  # Raise an exception for HTTP errors
-        yaml_content = response.text
+        try:
+            response = requests.get(path_or_url)
+            response.raise_for_status()  # Raise an exception for HTTP errors
+            yaml_content = response.text
+        except requests.RequestException as e:
+            raise SchemaFileNotFoundError(
+                extra_info={
+                    "error": str(e),
+                }
+            )
     elif Path(path_or_url).is_file():
         # It's a local file, so read its content
-        with open(path_or_url, "r") as file:
-            yaml_content = file.read()
+        try:
+            with open(path_or_url, "r") as file:
+                yaml_content = file.read()
+        except IOError as e:
+            raise SchemaFileNotFoundError(
+                extra_info={
+                    "error": str(e),
+                }
+            )
     else:
-        raise SchemaFileNotFoundError()
+        raise SchemaFileNotFoundError(
+            extra_info={
+                "unrecognized path": path_or_url,
+            }
+        )
 
     # Parse the YAML content
     try:

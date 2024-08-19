@@ -36,8 +36,15 @@ class SchemaFileNotFoundError(CyyrusException):
     SchemaFileNotFoundError class to handle schema file not found errors.
     """
 
-    def __init__(self, message: str = Messages.SCHEMA_FILE_COULD_NOT_BE_LOCATED):
-        super().__init__(message)
+    def __init__(
+        self,
+        message: str = Messages.SCHEMA_FILE_COULD_NOT_BE_LOCATED,
+        extra_info: Optional[Dict[str, str]] = None,
+    ):
+        super().__init__(
+            message,
+            extra_info=extra_info,
+        )
 
 
 class SchemaRequiredSectionMissingError(CyyrusException):

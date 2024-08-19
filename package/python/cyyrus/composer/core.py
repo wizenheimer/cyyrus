@@ -4,10 +4,10 @@ import warnings
 from collections import defaultdict
 from typing import (
     Any,
-    DefaultDict,
     Dict,
     List,
     Optional,
+    Set,
     Tuple,
     Type,
 )
@@ -25,11 +25,18 @@ from cyyrus.composer.dataframe import (
 from cyyrus.errors.composer import (
     AllRowsExcludedDueToNanWarning,
     InvalidKeyColumnError,
-    KeyColumnNotFoundError,
 )
 from cyyrus.models.spec import Spec
 from cyyrus.models.task import TaskType
-from cyyrus.tasks.base import BaseTask
+from cyyrus.models.types import (
+    StaticArrayModel,
+    StaticBooleanModel,
+    StaticFloatModel,
+    StaticIntegerModel,
+    StaticStringModel,
+)
+from cyyrus.tasks.base import DynamicBaseTask, StaticBaseTask
+from cyyrus.tasks.default import DefaultTask
 
 
 class Composer:
@@ -37,25 +44,31 @@ class Composer:
         self.spec: Spec = spec
         self.dataframe: pd.DataFrame = pd.DataFrame()
         self.task_artifacts = self._infer_tasks()
+        self.groupable_task_types: Set[str] = {
+            TaskType.GENERATION,
+        }
 
     def _infer_tasks(
         self,
-    ) -> DefaultDict[str, Type[BaseTask]]:
+    ) -> Dict[TaskType, Type[StaticBaseTask | DynamicBaseTask]]:
         try:
             module = importlib.import_module("cyyrus.tasks")
         except ImportError:
             raise
         else:
-            from cyyrus.tasks.base import BaseTask
-            from cyyrus.tasks.default import DefaultTask
+            from cyyrus.tasks.base import DynamicBaseTask, StaticBaseTask
 
-            task_dict = defaultdict(lambda: DefaultTask)
+            task_dict: Dict[TaskType, Type[StaticBaseTask | DynamicBaseTask]] = {}
 
             for _, cls in inspect.getmembers(module, inspect.isclass):
-                if (hasattr(cls, "TASK_ID") and issubclass(cls, BaseTask)) and cls != BaseTask:
-                    task_dict[cls.TASK_ID] = cls  # type: ignore
+                if (
+                    hasattr(cls, "TASK_ID")
+                    and (issubclass(cls, StaticBaseTask))
+                    or issubclass(cls, DynamicBaseTask)
+                ) and (cls != StaticBaseTask or cls != DynamicBaseTask):
+                    task_dict[cls.TASK_ID] = cls
 
-            return task_dict  # type: ignore
+            return task_dict
 
     def compose(
         self,
@@ -63,7 +76,6 @@ class Composer:
     ):
         # Iterate over each level in the spec
         for level_index, level in enumerate(self.spec.levels()):
-
             # Merge tasks in the level
             task_groups = self._group_tasks(level)
 
@@ -82,40 +94,48 @@ class Composer:
                 str,
                 TaskType,
                 Dict[str, int | str | float],
-                Dict[str, str],
+                List[str],
                 Any | None,
-            ],
+            ]
         ],
-    ) -> List[Dict[str, Any]]:  # type: ignore
-        task_groups = defaultdict(
+    ) -> List[Dict[str, Any]]:
+        grouped_tasks = defaultdict(
             lambda: {
-                "columns": [],
-                "models": {},
-                "output_columns": [],
                 "input_columns": [],
-                "task_type": None,
+                "output_columns": [],
+                "origin_models": {},
+                "task_type": TaskType.DEFAULT,
                 "task_properties": {},
             }
         )
+        ungrouped_tasks = []
 
         # Iterate over each task in the level, and group them by task type, properties, and input
-        for column_name, task_type, task_properties, task_input, dynamic_model in level:
-            # Create a unique key for each bucket
-            key = (task_type, frozenset(task_properties.items()), frozenset(task_input.items()))
+        for task in level:
+            column_name, task_type, task_properties, task_input, dynamic_model = task
 
-            # Column Parameters
-            task_groups[key]["output_columns"].append(column_name)  # type: ignore
-            task_groups[key]["input_columns"] = task_input.keys()  # type: ignore
+            if task_type in self.groupable_task_types:
+                key = (task_type, frozenset(task_properties.items()), frozenset(task_input))
+                group = grouped_tasks[key]
+                group["output_columns"].append(column_name)  # type: ignore
+                group["input_columns"] = task_input  # type: ignore
+                group["task_type"] = task_type
+                group["task_properties"] = task_properties
 
-            # Task Parameters
-            task_groups[key]["task_type"] = task_type  # type: ignore
-            task_groups[key]["task_properties"] = task_properties
+                if dynamic_model:
+                    group["origin_models"][column_name] = dynamic_model  # type: ignore
+            else:
+                ungrouped_tasks.append(
+                    {
+                        "output_columns": [column_name],
+                        "input_columns": task_input,
+                        "origin_models": {column_name: dynamic_model} if dynamic_model else {},
+                        "task_type": task_type,
+                        "task_properties": task_properties,
+                    }
+                )
 
-            # Add dynamic model to the bucket
-            if dynamic_model:
-                task_groups[key]["models"][column_name] = dynamic_model  # type: ignore
-
-        return list(task_groups.values())
+        return list(grouped_tasks.values()) + ungrouped_tasks
 
     def execute(
         self,
@@ -123,35 +143,48 @@ class Composer:
         level_index: int,
         dry_run: bool = False,
     ):
+        # Extract task information
         task_type = task_group["task_type"]
         task_properties = task_group["task_properties"]
-
-        origin_models = task_group["models"]
-        nested_model = (
-            self._nest_model(
-                origin_models,
-                task_group["task_type"],
-                level_index,
-            )
-            if origin_models
-            else None
-        )
-
-        task_instance = self.task_artifacts[task_type](
-            task_properties=task_properties,
-            task_model=nested_model,
-        )
-
         input_columns = task_group["input_columns"]
-        task_inputs = self._import_columns(columns=input_columns)
+        origin_models = task_group["origin_models"]
+        output_columns = task_group["output_columns"]
+
+        # Create a nested model if there are origin models
+        nested_model = self._nest_model(
+            origin_models,
+            task_type,
+            level_index,
+        )
+
+        task_entity = self.task_artifacts.get(task_type, DefaultTask)
+        task_instance = task_entity(
+            task_properties=task_properties,
+            task_model=nested_model,  # type: ignore
+        )
+
+        # Import or generate columns based on the task type
+        task_inputs = (
+            self._import_columns(columns=input_columns)
+            if task_type is not TaskType.PARSING and input_columns
+            else self._generate_columns(upper_bound=task_properties.get("upper_bound", -1))
+        )
 
         if dry_run:
+            print(
+                f"Task Type: {task_type}, Task Properties: {task_properties}, Task Inputs: {task_inputs}, Task Output: {output_columns}, Origin Models: {origin_models}, Nested Model: {nested_model}, Level Index: {level_index}"
+            )
             return
 
         task_results = []
         for task_input in task_inputs:
             task_output = task_instance.execute(task_input)
-            flattened_output = self._unnest_model(task_output, origin_models)
+            flattened_output = self._unnest_model(
+                task_output,
+                origin_models,
+                output_columns,
+                task_type,
+            )
             merged_output = task_input | flattened_output
             task_results.append(merged_output)
 
@@ -165,25 +198,35 @@ class Composer:
         origin_models: Dict[str, BaseModel],
         task_type: str,
         level_index: int,
-    ) -> BaseModel:
+    ) -> (
+        BaseModel
+        | StaticIntegerModel
+        | StaticFloatModel
+        | StaticBooleanModel
+        | StaticStringModel
+        | StaticArrayModel
+    ):
         model_name = f"Level{level_index}_{task_type.capitalize()}Model"
-        return create_model(model_name, **{name: (model, ...) for name, model in origin_models.items()})  # type: ignore
+        return (
+            create_model(
+                model_name, **{name: (model, ...) for name, model in origin_models.items()}  # type: ignore
+            )
+            if task_type in self.groupable_task_types
+            else list(origin_models.values())[0]
+        )
 
     def _unnest_model(
         self,
         nested_instance: BaseModel,
         origin_models: Dict[str, Type[BaseModel]],
+        output_columns: List[str],
+        task_type: str,
     ) -> Dict[str, BaseModel]:
-        """
-        Take an instance of a nested model and a list of model classes,
-        and return instances of those individual models.
-
-        :param nested_instance: An instance of a nested Pydantic model
-        :param models: A list of Pydantic model classes to unnest
-        :return: A dictionary of unnested model instances
-        """
-
         unnested = {}
+        if len(output_columns) == 1 and task_type not in self.groupable_task_types:
+            unnested = nested_instance.model_dump()
+            return {output_columns[0]: unnested.get("value", unnested)}
+
         for model_name in origin_models.keys():
             field_name = model_name
             if hasattr(nested_instance, field_name):
@@ -229,6 +272,12 @@ class Composer:
 
         return hf_dataset
 
+    def _generate_columns(
+        self,
+        upper_bound: int = -1,
+    ) -> List[Dict[str, Any]]:
+        return [{"path": "path/to/file"}]
+
     def _import_columns(
         self,
         columns: Optional[List[str]] = None,
@@ -272,29 +321,31 @@ class Composer:
         column_data: List[Dict[str, Any]],
         key_columns: List[str],
     ):
-        """
-        Update an existing DataFrame with new columns from new_data,
-        using key_columns to determine where to merge the new information.
-
-        :param df_existing: Existing DataFrame to update
-        :param new_data: List of dictionaries containing new data
-        :param key_columns: List of column names to use as keys for merging
-        :return: Updated DataFrame
-        """
         # Convert column_data to a DataFrame
         df_new = pd.DataFrame(column_data)
+
+        if not key_columns:
+            warnings.warn("key_columns is empty. Adding new columns without merging.", UserWarning)
+            self._add_new_columns(df_new)
+            return
 
         # Validate key_columns
         if not set(key_columns).issubset(self.dataframe.columns) or not set(key_columns).issubset(
             df_new.columns
         ):
-            raise KeyColumnNotFoundError(
-                extra_info={
-                    "key_columns": key_columns,
-                    "existing_columns": self.dataframe.columns,
-                    "new_columns": df_new.columns,
-                }
+            warnings.warn(
+                f"Some key columns not found in both DataFrames. Key columns: {key_columns}. Adding new columns without merging.",
+                UserWarning,
             )
+            self._add_new_columns(df_new)
+        else:
+            self.dataframe = self.dataframe.merge(df_new, on=key_columns, how="left")
 
-        # Perform a left merge to update existing rows and add new columns
-        self.dataframe = self.dataframe.merge(df_new, on=key_columns, how="left")
+    def _add_new_columns(self, df_new):
+        # Add new columns to the existing DataFrame
+        for col in df_new.columns:
+            if col not in self.dataframe.columns:
+                self.dataframe[col] = None
+
+        # Update the DataFrame with new data
+        self.dataframe.update(df_new)
