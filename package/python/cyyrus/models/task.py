@@ -1,80 +1,65 @@
 from enum import Enum
-from typing import Dict, Union
+from typing import Any, Dict, List, Union, get_args, get_origin
 
 from pydantic import BaseModel
+from pydantic.config import ConfigDict
+from pydantic.functional_validators import model_validator
 
-
-class TaskType(str, Enum):
-    # === Sentinel Tasks ===
-    DEFAULT = "default"
-    BASE_STATIC = "base_static"
-    BASE_DYNAMIC = "base_dynamic"
-
-    # === General Tasks ===
-    PARSING = "parsing"  # Ingest and interpret data from different types.
-    REFORMATTING = "reformatting"  # Convert data between different formats (e.g., CSV to JSON).
-    SCRAPING = "scraping"  # Collect and extract data from websites or online sources.
-
-    # === Document Processing Tasks ===
-    GRAPH_PARSING = "graph_parsing"  # Parse and understand visual graphs or diagrams.
-    TABLE_PARSING = "table_parsing"  # Extract structured data from tables in documents.
-    DOCUMENT_GENERATION = "document_generation"  # Create new documents based on given inputs.
-
-    # === Audio Processing Tasks ===
-    DIARIZATION = "diarization"  # Identify and separate different speakers in an audio recording.
-    TRANSCRIPTION = "transcription"  # Convert spoken language in audio into written text.
-
-    # === Multimodal Tasks ===
-    GENERATION = (
-        "generation"  # Create new content, such as generating text or audio from given inputs.
-    )
-    EMBEDDING = "embedding"  # Transform data into a numerical format that preserves semantic meaning (e.g., word embeddings).
-
-    # === Text Processing Tasks ===
-    CATEGORIZATION = "categorization"  # Classify text into predefined categories or labels.
-    ENTITY_RECOGNITION = "entity_recognition"  # Identify and classify entities (e.g., people, locations) within text.
-    CHUNKING = (
-        "chunking"  # Segment text into chunks based on syntactic structures (e.g., noun phrases).
-    )
-
-    # === Video Processing Tasks ===
-    AUDIOEXTRACTION = "audioextraction"  # Extract audio track from video files.
-    KEY_FRAME_EXTRACTION = (
-        "key_frame_extraction"  # Identify and extract important frames from a video.
-    )
-    FACE_EXTRACTION = "face_extraction"  # Detect and extract faces from video frames.
-
-    # === Vision Tasks ===
-    OPTICAL_CHARACTER_RECOGNITION = (
-        "optical_character_recognition"  # Convert images of text into machine-encoded text.
-    )
-    CAPTIONING = "captioning"  # Generate descriptive text for images or video frames.
-    OBJECT_DETECTION = (
-        "object_detection"  # Identify and locate objects within images or video frames.
-    )
-    DENSE_REGION_CAPTIONING = (
-        "dense_region_captioning"  # Generate captions for specific regions within an image.
-    )
-    REGION_PROPOSAL = "region_proposal"  # Propose potential regions of interest within images for further analysis.
-    CAPTION_TO_PHRASE_GROUNDING = (
-        "caption_to_phrase_grounding"  # Align descriptive captions with specific regions in images.
-    )
-    REFERRING_EXPRESSION_SEGMENTATION = "referring_expression_segmentation"  # Segment parts of images based on referring expressions in text.
-    REGION_TO_SEGMENTATION = "region_to_segmentation"  # Convert detected regions in images to detailed segmentation maps.
-    OPEN_VOCABULARY_DETECTION = (
-        "open_vocabulary_detection"  # Detect objects or concepts not limited to a fixed vocabulary.
-    )
-    REGION_TO_CATEGORY_CLASSIFICATION = "region_to_category_classification"  # Classify regions within images into specific categories.
-    REGION_TO_DESCRIPTION = "region_to_description"  # Generate detailed descriptions for specific regions within images.
+from cyyrus.models.task_type import TASK_PROPERTIES, TaskType
 
 
 class Task(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     task_type: TaskType
-    task_properties: Dict[
-        str,
-        Union[
-            int,
-            str,
-            float,
-        ],
-    ]
+    task_properties: Dict[str, Any]
+
+    @model_validator(mode="after")
+    def validate_task_properties(self):
+        task_type = self.task_type
+        properties = TASK_PROPERTIES.get(task_type, {})
+        required_props = properties.get("required", {})
+        optional_props = properties.get("optional", {})
+
+        validated_props = {}
+
+        def validate_and_convert(value, expected_type):
+            if get_origin(expected_type) is Union:
+                for t in get_args(expected_type):
+                    try:
+                        return validate_and_convert(value, t)
+                    except (ValueError, TypeError):
+                        continue
+                raise ValueError(f"Value {value} does not match any type in {expected_type}")
+            elif get_origin(expected_type) is List:
+                if not isinstance(value, list):
+                    raise TypeError(f"Expected a list, got {type(value)}")
+                return [validate_and_convert(item, get_args(expected_type)[0]) for item in value]
+            elif isinstance(expected_type, type) and issubclass(expected_type, Enum):
+                if isinstance(value, expected_type):
+                    return value
+                try:
+                    return expected_type(value)
+                except ValueError:
+                    raise ValueError(f"Invalid enum value: {value} for {expected_type}")
+            elif not isinstance(value, expected_type):
+                raise TypeError(f"Expected {expected_type}, got {type(value)}")
+            return value
+
+        for prop, (prop_type, default_value) in {**required_props, **optional_props}.items():
+            if prop in self.task_properties:
+                try:
+                    validated_props[prop] = validate_and_convert(
+                        self.task_properties[prop], prop_type
+                    )
+                except (ValueError, TypeError) as e:
+                    raise ValueError(f"Invalid value for {prop}: {str(e)}")
+            elif prop in required_props:
+                if default_value is ...:
+                    raise ValueError(f"Missing required property for {task_type}: {prop}")
+                validated_props[prop] = default_value
+            elif prop in optional_props and default_value is not ...:
+                validated_props[prop] = default_value
+
+        self.task_properties = validated_props
+        return self
