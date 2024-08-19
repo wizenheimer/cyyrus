@@ -1,5 +1,7 @@
 import importlib
 import inspect
+import os
+import uuid
 import warnings
 from collections import defaultdict
 from typing import (
@@ -167,7 +169,10 @@ class Composer:
         task_inputs = (
             self._import_columns(columns=input_columns)
             if task_type is not TaskType.PARSING and input_columns
-            else self._generate_columns(upper_bound=task_properties.get("upper_bound", -1))
+            else self._generate_columns(
+                task_type=task_type,
+                task_properties=task_properties,
+            )
         )
 
         if dry_run:
@@ -223,9 +228,17 @@ class Composer:
         task_type: str,
     ) -> Dict[str, BaseModel]:
         unnested = {}
-        if len(output_columns) == 1 and task_type not in self.groupable_task_types:
-            unnested = nested_instance.model_dump()
-            return {output_columns[0]: unnested.get("value", unnested)}
+        # In case it's not nested, we don't unpack it
+        if task_type not in self.groupable_task_types:
+            nested_instance_dict = nested_instance.model_dump()
+            nested_instance_value = nested_instance_dict.get(
+                "value",
+                str(nested_instance_dict.values()),
+            )
+            # Incase it's not nested it's implied that there's only one output column
+            return {
+                output_columns[0]: nested_instance_value,
+            }
 
         for model_name in origin_models.keys():
             field_name = model_name
@@ -274,9 +287,70 @@ class Composer:
 
     def _generate_columns(
         self,
-        upper_bound: int = -1,
+        task_type: TaskType,
+        task_properties: Dict[str, Any],
     ) -> List[Dict[str, Any]]:
+        if task_type is TaskType.PARSING:
+            return self._parse_files(
+                # Note: defaults are injected upstream, defaults are added for sentinel values
+                directory=task_properties.get("directory", ""),
+                file_types=task_properties.get("file_type", []),
+                max_depth=task_properties.get("max_depth", 10),
+            )
+        elif task_type is TaskType.GENERATION:
+            return self._generate_empty_rows(
+                max_rows=task_properties.get("max_rows", 100),
+            )
         return [{"path": "path/to/file"}]
+
+    def _parse_files(
+        self,
+        directory: str,
+        file_types: List[str],
+        max_depth: int,
+    ) -> List[Dict[str, Any]]:
+        # Parse files
+        result = []
+
+        identifier = uuid.uuid4().hex
+
+        def traverse(current_dir: str, current_depth: int):
+            if current_depth > max_depth:
+                return
+
+            try:
+                for entry in os.scandir(current_dir):
+                    if entry.is_file():
+                        _, ext = os.path.splitext(entry.name)
+                        if ext[1:] in file_types:  # Remove the dot from extension
+                            # Avoids conflicts with other columns
+                            result.append(
+                                {
+                                    f"path_{identifier}": entry.path,
+                                },
+                            )
+                    elif entry.is_dir():
+                        traverse(entry.path, current_depth + 1)
+            except PermissionError:
+                warnings.warn(
+                    f"Permission denied for directory: {current_dir}. Skipping this directory."
+                )
+
+        traverse(directory, 0)
+
+        return result
+
+    def _generate_empty_rows(
+        self,
+        max_rows: int,
+    ) -> List[Dict[str, Any]]:
+        identifier = uuid.uuid4().hex
+        return [
+            {
+                f"{identifier}": "",
+            }
+            for _ in range(max_rows)
+        ]
 
     def _import_columns(
         self,
