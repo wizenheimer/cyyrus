@@ -24,7 +24,7 @@ from cyyrus.errors.task import (
 from cyyrus.models.column import Column
 from cyyrus.models.dataset import Dataset, SpecVersion
 from cyyrus.models.task import Task, TaskType
-from cyyrus.models.types import CustomType, DataType
+from cyyrus.models.types import CustomType, DataType, get_types
 from cyyrus.utils.mermaid import Mermaid
 
 
@@ -34,6 +34,33 @@ class Spec(BaseModel):
     tasks: Dict[str, Task]
     types: Dict[str, CustomType]
     columns: Dict[str, Column]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._populate_types()
+
+    def _populate_types(self):
+        # Iterate over all columns and set the Pydantic model based on the task type and custom type
+        for column in self.columns.values():
+            # Get the task type and custom type
+            column_task = self.tasks.get(
+                column.task_id,
+                Task(
+                    task_type=TaskType.DEFAULT,
+                    task_properties={},
+                ),
+            ).task_type
+            custom_type = self.types.get(
+                column.column_type,
+                CustomType(
+                    type=DataType.DEFAULT,
+                ),
+            )
+            # Set the Pydantic model for the column based on the task type and custom type
+            column.pydantic_model = get_types(
+                task_type=column_task,
+                type_def=custom_type.model_dump(),
+            )
 
     def extract_dag_representation(self) -> Dict[str, List[str]]:
         return {
@@ -149,7 +176,7 @@ class Spec(BaseModel):
             task.task_type,
             task.task_properties,
             column.task_input,
-            custom_type.dynamic_model if custom_type else None,
+            column.pydantic_model if custom_type else None,
         )
 
     def generate_mermaid_graph(
