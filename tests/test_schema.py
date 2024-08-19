@@ -24,7 +24,7 @@ from cyyrus.models.types import (  # type: ignore
     CustomType,
     DataType,
     ObjectProperty,
-    create_dynamic_type,
+    get_dynamic_model,
 )
 from pydantic import BaseModel, ValidationError
 
@@ -336,7 +336,6 @@ def test_type():
     assert valid_type.type == DataType.STRING
     assert valid_type.properties is None
     assert valid_type.items is None
-    assert valid_type.dynamic_model is not None
 
     # Test Type with properties
     type_with_props = CustomType(
@@ -345,13 +344,11 @@ def test_type():
     assert type_with_props.type == DataType.OBJECT
     assert "prop1" in type_with_props.properties  # type: ignore
     assert type_with_props.properties["prop1"].type == DataType.INTEGER  # type: ignore
-    assert type_with_props.dynamic_model is not None
 
     # Test Type with items
     type_with_items = CustomType(type=DataType.ARRAY, items=ArrayItems(type=DataType.STRING))
     assert type_with_items.type == DataType.ARRAY
     assert type_with_items.items.type == DataType.STRING  # type: ignore
-    assert type_with_items.dynamic_model is not None
 
     # Test invalid Type (missing required field)
     with pytest.raises(ValidationError):
@@ -366,24 +363,24 @@ def test_type():
 
 def test_create_dynamic_type():
     # Test primitive types
-    str_model = create_dynamic_type({"type": "string"})
+    str_model = get_dynamic_model({"type": "string"})
     assert issubclass(str_model, BaseModel)
     assert str_model.model_fields["value"].annotation is str
 
-    int_model = create_dynamic_type({"type": "integer"})
+    int_model = get_dynamic_model({"type": "integer"})
     assert issubclass(int_model, BaseModel)
     assert int_model.model_fields["value"].annotation is int
 
-    float_model = create_dynamic_type({"type": "float"})
+    float_model = get_dynamic_model({"type": "float"})
     assert issubclass(float_model, BaseModel)
     assert float_model.model_fields["value"].annotation is float
 
-    bool_model = create_dynamic_type({"type": "boolean"})
+    bool_model = get_dynamic_model({"type": "boolean"})
     assert issubclass(bool_model, BaseModel)
     assert bool_model.model_fields["value"].annotation is bool
 
     # Test object type
-    obj_model = create_dynamic_type(
+    obj_model = get_dynamic_model(
         {
             "type": "object",
             "properties": {"prop1": {"type": "string"}, "prop2": {"type": "integer"}},
@@ -397,7 +394,7 @@ def test_create_dynamic_type():
     assert obj_model.model_fields["prop2"].annotation.model_fields["value"].annotation is int
 
     # Test array type
-    array_model = create_dynamic_type({"type": "array", "items": {"type": "string"}})
+    array_model = get_dynamic_model({"type": "array", "items": {"type": "string"}})
     assert issubclass(array_model, BaseModel)
     items_type = array_model.model_fields["items"].annotation
     assert get_origin(items_type) is list
@@ -406,7 +403,7 @@ def test_create_dynamic_type():
     assert item_type.model_fields["value"].annotation is str
 
     # Test nested object type
-    nested_obj_model = create_dynamic_type(
+    nested_obj_model = get_dynamic_model(
         {
             "type": "object",
             "properties": {
@@ -428,7 +425,7 @@ def test_create_dynamic_type():
 
     # Test maximum depth exceeded
     with pytest.raises(MaximumDepthExceededError) as excinfo:
-        create_dynamic_type(
+        get_dynamic_model(
             {
                 "type": "object",
                 "properties": {
@@ -457,7 +454,7 @@ def test_create_dynamic_type():
     assert excinfo.value.extra_info["max_depth"] == "5"
 
     # Test with custom max_depth
-    deep_nested_model = create_dynamic_type(
+    deep_nested_model = get_dynamic_model(
         {
             "type": "object",
             "properties": {
