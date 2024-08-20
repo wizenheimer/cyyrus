@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Type, Union
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import (
     BaseModel,
@@ -9,14 +9,13 @@ from pydantic.fields import Field
 from pydantic.functional_validators import model_validator
 
 from cyyrus.errors.types import MaximumDepthExceededError
-from cyyrus.models.task import TaskType
-
-# =============================================================================
-#                               Supported Datatypes
-# =============================================================================
 
 
 class DataType(str, Enum):
+    """
+    Enum for the different data types supported by the API.
+    """
+
     DEFAULT = "string"
     STRING = "string"
     INTEGER = "integer"
@@ -26,58 +25,19 @@ class DataType(str, Enum):
     ARRAY = "array"
 
 
-# =============================================================================
-#                              Static Types
-#     These are for tasks which have predefined types for their outputs
-# =============================================================================
-
-
-class StaticStringModel(BaseModel):
-    value: str = Field(
-        ...,
-        description="Value of the type",
-    )
-
-
-class StaticIntegerModel(BaseModel):
-    value: int = Field(
-        ...,
-        description="Value of the type",
-    )
-
-
-class StaticFloatModel(BaseModel):
-    value: float = Field(
-        ...,
-        description="Value of the type",
-    )
-
-
-class StaticBooleanModel(BaseModel):
-    value: bool = Field(
-        ...,
-        description="Value of the type",
-    )
-
-
-class StaticArrayModel(BaseModel):
-    value: List[Union[str, int, float, bool]] = Field(
-        ...,
-        description="Items of the array",
-    )
-
-
-# =============================================================================
-#                             Dynamic Types
-#    These are for tasks which have dynamic types for their outputs
-# =============================================================================
-
-
 class ObjectProperty(BaseModel):
+    """
+    Pydantic model for defining an object property.
+    """
+
     type: DataType
 
 
 class ArrayItems(BaseModel):
+    """
+    Pydantic model for defining the items in an array.
+    """
+
     type: DataType
     properties: Optional[Dict[str, Union[ObjectProperty, str]]] = None
 
@@ -86,13 +46,10 @@ class ArrayItems(BaseModel):
         if values.properties:
             for key, value in values.properties.items():
                 if isinstance(value, str):
-                    values.properties[key] = ObjectProperty(type=value)  # type: ignore
+                    values.properties[key] = ObjectProperty(
+                        type=DataType(value),
+                    )
         return values
-
-
-# =============================================================================
-#                             Custom Type for Spec
-# =============================================================================
 
 
 class CustomType(BaseModel):
@@ -130,115 +87,113 @@ class CustomType(BaseModel):
 # ================================================================================================
 
 
-DYNAMIC_TASKS: Set[TaskType] = {
-    TaskType.GENERATION,
-}
+class DefaultModel(BaseModel):
+    """
+    Pydantic model for the default data type.
+    """
+
+    result: str = Field(..., description="result")
 
 
-def get_types(
-    task_type: TaskType,
-    type_def: Dict[str, Any],
-) -> type[
-    BaseModel
-    | StaticIntegerModel
-    | StaticFloatModel
-    | StaticBooleanModel
-    | StaticArrayModel
-    | StaticStringModel
-]:
-    if task_type in DYNAMIC_TASKS:
-        # If the task type is in custom_typed, then we need to create a dynamic type as per the type_def
-        return get_dynamic_model(type_def)
-    else:
-        # If the task type is not in custom_typed, then we disregard the type_def and create a static type
-        return get_static_model(task_type)
+class TypeMappingUtils:
+    """
+    Utility class for mapping task and type definitions to a concrete pydantic models.
+    """
 
+    @staticmethod
+    def get_python_type(
+        type_string: str,
+    ) -> type:
+        """
+        Get the python type corresponding to the given type string.
+        """
 
-def get_static_model(
-    task_type: TaskType,
-) -> type[
-    BaseModel
-    | StaticIntegerModel
-    | StaticFloatModel
-    | StaticBooleanModel
-    | StaticArrayModel
-    | StaticStringModel
-]:
-    TASK_TO_TYPE_MAPPING: Dict[TaskType, Type[BaseModel]] = {
-        TaskType.EMBEDDING: StaticArrayModel,
-    }
+        TYPE_MAPPING = {
+            "string": str,
+            "integer": int,
+            "float": float,
+            "boolean": bool,
+        }
 
-    return TASK_TO_TYPE_MAPPING.get(task_type, StaticStringModel)
-
-
-def get_python_type(
-    type_string: str,
-) -> type:
-    TYPE_MAPPING = {
-        "string": str,
-        "integer": int,
-        "float": float,
-        "boolean": bool,
-    }
-
-    return TYPE_MAPPING.get(type_string.lower(), Any)
-
-
-def get_dynamic_model(
-    type_def: Dict[str, Any],
-    depth: int = 0,
-    max_depth: int = 5,
-) -> type[BaseModel]:
-    if depth >= max_depth:
-        raise MaximumDepthExceededError(
-            extra_info={
-                "max_depth": str(max_depth),
-            },
+        return TYPE_MAPPING.get(
+            type_string.lower(),
+            Any,
         )
 
-    type_value = type_def["type"]
-    # Recursively create models for nested types
-    if type_value == "object":
-        fields = {}
-        for prop_name, prop_type in type_def.get("properties", {}).items():
-            if isinstance(prop_type, dict):
-                fields[prop_name] = (
-                    get_dynamic_model(
-                        prop_type,
-                        depth + 1,
-                        max_depth,
-                    ),
+    @staticmethod
+    def get_concrete_model(
+        type_def: Optional[Dict[str, Any]] = None,
+        depth: int = 0,
+        max_depth: int = 5,
+    ) -> type[BaseModel]:
+        """
+        Get the concrete pydantic model for the given type definition.
+        """
+
+        if type_def is None:
+            return DefaultModel
+
+        # Check if the depth exceeds the maximum depth
+        if depth >= max_depth:
+            raise MaximumDepthExceededError(
+                extra_info={
+                    "max_depth": str(max_depth),
+                },
+            )
+
+        # Get the type value from the type definition
+        type_value = type_def["type"]
+
+        # Recursively create models for nested types
+        if type_value == "object":
+            fields = {}
+
+            # Iterate over the properties and create models for each property
+            for prop_name, prop_type in type_def.get(
+                "properties",
+                {},
+            ).items():
+                # If the property type is a dictionary, create a model for it
+                if isinstance(prop_type, dict):
+                    fields[prop_name] = (
+                        TypeMappingUtils.get_concrete_model(
+                            prop_type,
+                            depth + 1,
+                            max_depth,
+                        ),
+                        ...,
+                    )
+                else:
+                    fields[prop_name] = (
+                        TypeMappingUtils.get_python_type(
+                            prop_type,
+                        ),
+                        ...,
+                    )
+            return create_model(
+                f"DynamicModel_{depth}",
+                **fields,
+            )
+        # If the type is an array, create a model for the items
+        elif type_value == "array":
+            item_type = TypeMappingUtils.get_concrete_model(
+                type_def["items"],
+                depth + 1,
+                max_depth,
+            )
+            return create_model(
+                f"ArrayModel_{depth}",
+                items=(
+                    List[item_type],
                     ...,
-                )
-            else:
-                fields[prop_name] = (
-                    get_python_type(
-                        prop_type,
-                    ),
-                    ...,
-                )
-        return create_model(
-            f"DynamicModel_{depth}",
-            **fields,
-        )
-    elif type_value == "array":
-        item_type = get_dynamic_model(
-            type_def["items"],
-            depth + 1,
-            max_depth,
-        )
-        return create_model(
-            f"ArrayModel_{depth}",
-            items=(
-                List[item_type],
-                ...,
-            ),
-        )
-    else:
-        python_type = get_python_type(
-            type_value,
-        )
-        return create_model(
-            f"PrimitiveModel_{type_def['type']}_{depth}",
-            value=(python_type, ...),
-        )
+                ),
+            )
+        # If the type is a primitive type, return the corresponding python type
+        else:
+            python_type = TypeMappingUtils.get_python_type(
+                type_value,
+            )
+            return create_model(
+                f"PrimitiveModel_{type_def['type']}_{depth}",
+                value=(python_type, ...),
+            )
