@@ -1,14 +1,6 @@
-from typing import List, Union
+from typing import List
 
 from pydantic import BaseModel, Field
-
-from cyyrus.models.types import (
-    StaticArrayModel,
-    StaticBooleanModel,
-    StaticFloatModel,
-    StaticIntegerModel,
-    StaticStringModel,
-)
 
 
 class Column(BaseModel):
@@ -27,16 +19,4 @@ class Column(BaseModel):
     task_input: List[str] = Field(
         default=[],
         description="Input to the task",
-    )
-    pydantic_model: Union[
-        type[BaseModel],
-        StaticStringModel,
-        StaticBooleanModel,
-        StaticFloatModel,
-        StaticIntegerModel,
-        StaticArrayModel,
-    ] = Field(
-        default=StaticStringModel,
-        exclude=True,
-        description="Dynamic model created based on data inside CustomType and TaskType",
     )

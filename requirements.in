@@ -2,3 +2,6 @@ click==8.1.7
 pydantic==2.8.2
 datasets==2.21.0
 python-dotenv==1.0.1
+pillow==10.4.0
+pydub==0.25.1
+pdf2image==1.17.0

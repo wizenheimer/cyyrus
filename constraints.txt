@@ -63,12 +63,20 @@ packaging==24.1
     #   huggingface-hub
 pandas==2.2.2
     # via datasets
+pdf2image==1.17.0
+    # via -r requirements.in
+pillow==10.4.0
+    # via
+    #   -r requirements.in
+    #   pdf2image
 pyarrow==17.0.0
     # via datasets
 pydantic==2.8.2
     # via -r requirements.in
 pydantic-core==2.20.1
     # via pydantic
+pydub==0.25.1
+    # via -r requirements.in
 python-dateutil==2.9.0.post0
     # via pandas
 python-dotenv==1.0.1

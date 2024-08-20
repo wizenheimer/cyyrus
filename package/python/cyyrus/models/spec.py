@@ -24,7 +24,7 @@ from cyyrus.errors.task import (
 from cyyrus.models.column import Column
 from cyyrus.models.dataset import Dataset, SpecVersion
 from cyyrus.models.task import Task, TaskType
-from cyyrus.models.types import CustomType, DataType, get_types
+from cyyrus.models.types import CustomType, DataType, TypeMappingUtils
 from cyyrus.utils.mermaid import Mermaid
 
 
@@ -37,32 +37,29 @@ class Spec(BaseModel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._populate_types()
+        self._populate_concrete_model()
 
-    def _populate_types(self):
-        # Iterate over all columns and set the Pydantic model based on the task type and custom type
-        for column in self.columns.values():
-            # Get the task type and custom type
-            column_task = self.tasks.get(
-                column.task_id,
-                Task(
-                    task_type=TaskType.DEFAULT,
-                    task_properties={},
-                ),
-            ).task_type
-            custom_type = self.types.get(
-                column.column_type,
-                CustomType(
-                    type=DataType.DEFAULT,
-                ),
-            )
-            # Set the Pydantic model for the column based on the task type and custom type
-            column.pydantic_model = get_types(
-                task_type=column_task,
-                type_def=custom_type.model_dump(),
-            )
+    def _populate_concrete_model(self):
+        # Extract the custom types
+        custom_types = {
+            type_name: custom_type.model_dump() for type_name, custom_type in self.types.items()
+        }
 
-    def extract_dag_representation(self) -> Dict[str, List[str]]:
+        # Update the task properties with the concrete model
+        for task_id, task in self.tasks.items():
+            if task.task_type == TaskType.GENERATION:
+                response_format_identifier = task.task_properties.get("response_format", None)
+                concrete_type_def = custom_types.get(response_format_identifier)
+                concrete_model = TypeMappingUtils.get_concrete_model(concrete_type_def)
+                task.task_properties["response_format"] = concrete_model
+
+                # Update the column properties with the concrete model
+                self.tasks[task_id] = task
+
+    def extract_dag_representation(self) -> Dict[
+        str,
+        List[str],
+    ]:
         return {
             column_name: list(column.task_input) for column_name, column in self.columns.items()
         }
@@ -150,7 +147,12 @@ class Spec(BaseModel):
     def extract_task_info(
         self,
         column_name: str,
-    ) -> Tuple[str, TaskType, Dict[str, Union[int, str, float]], List[str], Union[Any, None]]:
+    ) -> Tuple[
+        List[str],
+        str,
+        TaskType,
+        Dict[str, Union[int, str, float]],
+    ]:
         column = self.columns.get(column_name)
 
         if not column:
@@ -169,14 +171,13 @@ class Spec(BaseModel):
                 }
             )
 
-        custom_type: CustomType | None = self.types.get(column.column_type)
-
         return (
+            # Column Information
+            column.task_input,
             column_name,
+            # Task Information
             task.task_type,
             task.task_properties,
-            column.task_input,
-            column.pydantic_model if custom_type else None,
         )
 
     def generate_mermaid_graph(
@@ -193,7 +194,14 @@ class Spec(BaseModel):
     def levels(
         self,
     ) -> Generator[
-        List[Tuple[str, TaskType, Dict[str, Union[int, str, float]], List[str], Union[Any, None]]],
+        List[
+            Tuple[
+                List[str],
+                str,
+                TaskType,
+                Dict[str, Any],
+            ]
+        ],
         None,
         None,
     ]:
@@ -204,7 +212,10 @@ class Spec(BaseModel):
             yield [self.extract_task_info(node) for node in level]
 
 
-def env_var_constructor(loader, node):
+def env_var_constructor(
+    loader,
+    node,
+):
     value = loader.construct_scalar(node)
     return os.environ.get(value, value)
 
@@ -263,7 +274,10 @@ def load_spec(
 
 
 def level_order_traversal(
-    dependencies: Dict[str, List[str]],
+    dependencies: Dict[
+        str,
+        List[str],
+    ],
 ):
     # Create a reverse dependency graph using defaultdict
     reverse_deps = defaultdict(list)
