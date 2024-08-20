@@ -34,26 +34,24 @@ dataset:
 
 # Define the types that will be used in the dataset
 types:
-  document_id: # This is the type_id
-    type: string # This is the type of the type, could be one of string, integer, integer, boolean, object, array
-
-  document_info:
-    type: object # Incase it's object, it must have properties
-    properties:
-      type: string # The key of the property and the type of the property
-      date: string
-
-  invoice_items:
-    type: array # Incase it's array, it must have items
-    items:
-      type: object # The type of the items in the array, could be one of string, integer, integer, boolean, object, array. All elements inside array must be of the same type.
-      properties:
-        item: string
-        description: string
-        price: float
-        quantity: integer
-        category: string
-        sub_category: string
+  invoice_data:
+    type: object
+    properties: # Incase of object type, must define the properties of the object
+      invoice_id:
+        type: string
+      invoice_date:
+        type: string
+      invoice_items:
+        type: array
+        items:
+          type: object
+          properties:
+            item: string
+            category: string
+            sub_category: string
+            description: string
+            price: float
+            quantity: integer
 
   invoice_questions:
     type: array
@@ -63,65 +61,41 @@ types:
         question: string
         answer: string
 
-  document_text:
-    type: string
-
 # Define the tasks that will be used in Dataset generation, and their properties
 tasks:
-  extract_invoice_data: # This is the task_id
-    task_type: generation # This is the type of the task, task_type could be one of diarization, generation, transcription, categorization, embedding, captioning, object_detection, dense_region_captioning, region_proposal, caption_to_phrase_grounding, referring_expression_segmentation, region_to_segmentation, open_vocabulary_detection, region_to_category_classification, region_to_description, optical_character_recognition, chunking, audioextraction, key_frame_extraction, face_extraction, entity_recognition
-    task_properties: # These are the properties of the task, would depend on the task_type but would always be key value pairs
-      max_tokens: 100
-      model: gpt-3.5-turbo
-      prompt: Extract the invoice data from the document {invoice}
+  invoice_parsing:
+    task_type: document_parsing
+    task_properties:
+      directory: /path/to/invoices
+      file_type: pdf
+      max_depth: 5
+      response_format: base64 # image, base64, or text
 
-  extract_document_info:
+  extract_invoice_data:
     task_type: generation
     task_properties:
       max_tokens: 100
       model: gpt-3.5-turbo
-      prompt: Extract the document information from the document
+      prompt: Extract the invoice data from the document {invoice}
+      response_format: invoice_data
 
   generate_invoice_questions:
     task_type: generation
     task_properties:
       max_tokens: 100
       model: gpt-3.5-turbo
-      prompt: Generate questions about the invoice items
-
-  pdf_parsing:
-    task_type: optical_character_recognition
-    task_properties:
-      output: markdown
-      path: /path/to/first/directory
+      prompt: Generate questions about the invoice items {invoice_questions}
+      response_format: invoice_questions
 
 # Define the columns that will be used in the dataset
 columns:
   invoice:
-    column_type: document_text
-    description: Invoice text
-    task_id: pdf_parsing
+    task_id: invoice_parsing
 
-  document_id: # column_name
-    column_type: document_id # This references the type_id or could be one of string, integer, integer, boolean. doesn't allow object, array. must be defined in the types.
-    description: ID of the document # Description of the column
-    task_id: extract_document_info # Task_id that will be used to generate the data
-    task_input: [invoice]
-
-  document_info:
-    column_type: document_info
-    description: Information about the document
-    task_id: extract_document_info
-    task_input: [invoice]
-
-  invoice_items:
-    column_type: invoice_items
-    description: Array of invoice items
+  invoice_data:
     task_id: extract_invoice_data
     task_input: [invoice]
 
   invoice_questions:
-    column_type: invoice_questions
-    description: Questions about the invoice items
     task_id: generate_invoice_questions
-    task_input: [invoice_items]
+    task_input: [invoice_data]
