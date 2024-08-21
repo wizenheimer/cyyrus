@@ -2,6 +2,34 @@
 
 This README provides an overview of the various commands available in the project's Makefile for dependency management, building the project, running tests, maintaining code quality, and cleaning up artifacts amongst others.
 
+```
+Usage: make [target]
+
+Targets:
+ check-prereqs               Check pre-requisites for the project
+ init                        Initialize the project
+ dev                         Set up the development environment
+ update-dependencies         Update all dependencies
+ sync-dependencies           Sync dependencies using pip-sync
+ compile-dependencies        Compile all dependency files
+ compile-requirements        Compile main requirements file
+ compile-constraints         Compile constraints file
+ compile-dev-requirements    Compile development requirements file
+ add-dependency              Add a new dependency to the project (Usage: make add-dependency package=<name> version=<version> [dev=true] [update=true])
+ build                       Build the project
+ test                        Run project tests
+ publish                     Publish the project to TestPyPI
+ experimental                Create an experimental session with the package
+ check                       Run code quality checks (lint and format)
+ lint                        Run linting checks
+ format                      Run code formatting checks
+ fix                         Run code quality checks and fix issues (lint-fix and format-fix)
+ lint-fix                    Run linting and fix issues
+ format-fix                  Run code formatting and fix issues
+ clean                       Clean the project (Usage: make clean [dev=true])
+ debug                       Debug build environment (Usage: make debug [EXPORT=true])
+ ```
+
 ## Table of Contents
 
 1. [Initialization](#initialization)
@@ -85,8 +113,16 @@ Runs tests in the `tests` directory using `pytest`.
 make test
 ```
 
+### `debug`
+Assists in inspecting the current environment.
+
+```sh
+make debug
+```
+
 **Parameters:**
-- `PYTEST_OPTIONS` are used to configure pytest.
+- `EXPORT` boolean flag whether to trigger debug dump
+- `DEBUG_FILE` defines the debug file for exporting dumps
 
 ## Code Quality with Fix
 
