@@ -57,6 +57,13 @@ class Composer:
         for level_index, level in enumerate(self.spec.levels()):
             # Merge tasks in the level
             for input_columns, output_column, task_type, task_properties in level:
+
+                if dry_run:
+                    print(
+                        f"Level_Index: {level_index}, Task: {task_type}, Inputs: {input_columns}, Properties: {task_properties}, Output: {output_column}\n"
+                    )
+                    continue
+
                 self.execute(
                     input_columns=input_columns,
                     output_column=output_column,
