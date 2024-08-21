@@ -40,24 +40,25 @@ TASK_PROPERTIES = {
     },
     TaskType.PARSING: {
         "required": {
-            "directory": (
-                str,
-                ...,
-            ),
-            "file_type": (
-                UnparsedFormat,
-                ...,
-            ),
-            "max_depth": (
-                int,
-                5,
-            ),
             "parsed_format": (
                 ParsedFormat,
                 ParsedFormat.BASE64,
             ),
+            "file_type": (
+                UnparsedFormat,
+                UnparsedFormat.PDF,
+            ),
         },
-        "optional": {},
+        "optional": {
+            "max_depth": (
+                int,
+                5,
+            ),
+            "directory": (
+                str,
+                "*",
+            ),
+        },
     },
     TaskType.SCRAPING: {
         "required": {

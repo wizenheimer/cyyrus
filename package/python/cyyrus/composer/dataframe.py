@@ -19,6 +19,9 @@ class DataFrameUtils:
         df: pd.DataFrame,
         nulls: str,
     ) -> pd.DataFrame:
+        """
+        Drops rows with null values if nulls is set to "exclude".
+        """
         if nulls == "exclude":
             return df.dropna()
         return df
@@ -28,6 +31,9 @@ class DataFrameUtils:
         df: pd.DataFrame,
         required_columns: List[str],
     ) -> pd.DataFrame:
+        """
+        Ensure that the required columns are present in the DataFrame.
+        """
         missing_columns = set(required_columns) - set(df.columns)
         if missing_columns:
             warnings.warn(
@@ -46,6 +52,10 @@ class DataFrameUtils:
         df: pd.DataFrame,
         unique_columns: List[str],
     ) -> pd.DataFrame:
+        """
+        Ensure that the unique columns have unique values in the DataFrame.
+        Drops duplicates if unique_columns is not empty.
+        """
         if unique_columns:
             initial_count = len(df)
             df = df.drop_duplicates(subset=unique_columns, keep="first")
@@ -68,6 +78,9 @@ class DatasetUtils:
         train_size: float,
         test_size: float,
     ) -> Tuple[float, float]:
+        """
+        Normalize the split sizes to ensure they add up to 1.
+        """
         total = train_size + test_size
         if total <= 0:
             warnings.warn(
@@ -126,6 +139,9 @@ class DatasetUtils:
         test_size: float,
         seed: int,
     ) -> Tuple[Dataset, Dataset]:
+        """
+        Splits the dataset into train and test sets.
+        """
         total_size = len(dataset)
 
         # Normalize split sizes

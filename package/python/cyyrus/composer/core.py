@@ -57,6 +57,13 @@ class Composer:
         for level_index, level in enumerate(self.spec.levels()):
             # Merge tasks in the level
             for input_columns, output_column, task_type, task_properties in level:
+
+                if dry_run:
+                    print(
+                        f"Level_Index: {level_index}, Task: {task_type}, Inputs: {input_columns}, Properties: {task_properties}, Output: {output_column}\n"
+                    )
+                    continue
+
                 self.execute(
                     input_columns=input_columns,
                     output_column=output_column,
@@ -86,15 +93,17 @@ class Composer:
             )
             return
 
-        task_results = []
-        if len(task_inputs) == 0:
-            task_output = task_instance.execute({})
+        task_results: List[Dict[str, Any]] = []
+        # Incase there are no task_inputs we attempt reference free execution
+        if not task_inputs:
+            task_results: List[Dict[str, Any]] = task_instance.reference_free_execution()
+        # Incase there are task_inputs we attempt reference based execution
         else:
             for task_input in task_inputs:
-                task_output = task_instance.execute(task_input)
-                task_results.extend(task_output)
+                task_output = task_instance.reference_based_execution(task_input)
+                task_results.append({**task_input, **task_output})
 
-        self._merge_columns(
+        self._refresh_dataframe(
             column_data=task_results,
         )
 
@@ -177,28 +186,57 @@ class Composer:
 
         return result
 
-    def _merge_columns(
-        self,
-        column_data: List[Dict[str, Any]],
-    ):
+    def _refresh_dataframe(self, column_data: List[Dict[str, Any]]):
+        """
+        Refreshes the dataframe with new column data, handling potential duplicate indices and preserving existing data.
+
+        :param column_data: List of dictionaries containing new data
+
+        Strategy:
+        If a column exists in both dataframes, we update it using combine_first.
+        If a column only exists in the old dataframe, we keep it as is.
+        If a column only exists in the new dataframe, we add it.
+        """
         # Handle empty column data
         if not column_data:
             return
 
+        # Convert column data to a DataFrame
         new_df = pd.DataFrame(column_data)
 
-        # Handle empty existing dataframe
+        # Explode list columns in new_df
+        for col in new_df.columns:
+            if new_df[col].apply(lambda x: isinstance(x, list)).any():
+                new_df = new_df.explode(col)
+
+        # Reset index of new_df to ensure it's unique
+        new_df = new_df.reset_index(drop=True)
+
+        # If the existing dataframe is empty, just use the new data
         if self.dataframe.empty:
             self.dataframe = new_df
             return
 
-        # Ensure the new DataFrame has the same number of rows as the original
-        max_rows = max(len(self.dataframe), len(new_df))
-        self.dataframe = self.dataframe.reindex(range(max_rows))
-        new_df = new_df.reindex(range(max_rows))
+        # Reset index of existing dataframe to ensure it's unique
+        self.dataframe = self.dataframe.reset_index(drop=True)
 
-        # Add new columns to the original DataFrame
-        for column in new_df.columns:
-            self.dataframe[column] = new_df[column]
+        # Identify new columns
+        existing_columns = set(self.dataframe.columns)
 
-        return self.dataframe
+        # Create a temporary dataframe with all columns
+        temp_df = pd.DataFrame(index=range(max(len(self.dataframe), len(new_df))))
+
+        # Update existing columns and add new ones
+        for col in self.dataframe.columns.union(new_df.columns):
+            if col in existing_columns and col in new_df.columns:
+                # Update existing column, preserving old values where new ones are NaN
+                temp_df[col] = new_df[col].combine_first(self.dataframe[col])
+            elif col in existing_columns:
+                # Keep existing column as is
+                temp_df[col] = self.dataframe[col]
+            else:
+                # Add new column
+                temp_df[col] = new_df[col]
+
+        # Update self.dataframe with the merged data
+        self.dataframe = temp_df.dropna(how="all").reset_index(drop=True)

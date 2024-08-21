@@ -41,6 +41,23 @@ def check_and_install():
                     "Please install Poppler manually from https://poppler.freedesktop.org/"
                 )
 
+        # Check and install FFmpeg
+        try:
+            run_command("ffmpeg -version")
+            print("FFmpeg is already installed.")
+        except RuntimeError:
+            if platform.system() == "Darwin":  # macOS
+                install_package("brew install ffmpeg", "FFmpeg")
+            elif platform.system() == "Linux":  # Linux
+                install_package(
+                    "sudo apt-get update && sudo apt-get install -y ffmpeg",
+                    "FFmpeg",
+                )
+            else:
+                raise RuntimeError(
+                    "Please install FFmpeg manually from https://ffmpeg.org/download.html"
+                )
+
     except RuntimeError as err:
         print(f"Error during installation: {err}", file=sys.stderr)
         sys.exit(1)

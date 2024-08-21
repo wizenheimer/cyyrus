@@ -44,9 +44,15 @@ else
     PYTHON := python3
 endif
 
-# ==============================================================================
-# 									Check Pre-requisites
-# ==============================================================================
+# Help target
+.PHONY: help
+help:
+	@echo "Usage: make [target]"
+	@echo ""
+	@echo "Targets:"
+	@sed -n 's/^##//p' $(MAKEFILE_LIST) | column -t -s ':' | sed -e 's/^/ /'
+
+## check-prereqs: Check pre-requisites for the project
 .PHONY: check-prereqs
 check-prereqs:
 	@echo "Checking pre-requisites..."
@@ -55,11 +61,7 @@ check-prereqs:
 	@which docker > /dev/null 2>&1 || (echo "Docker is not installed. Please install it and try again." && exit 1)
 	@echo "All pre-requisites are satisfied."
 
-# ==============================================================================
-# 									Initialization
-# ==============================================================================
-
-# Target to initialize the development environment
+## init: Initialize the project
 .PHONY: init
 init: check-prereqs
 	@echo "== Initializing Development Environment =="
@@ -76,36 +78,35 @@ init: check-prereqs
 	@$(PIP_INSTALL) -r pip-requirements.txt
 	@$(PIP_INSTALL) --upgrade setuptools wheel build
 
-# Target to setup the development environment
+## dev: Set up the development environment
 .PHONY: dev
 dev: init update-dependencies
 
-# ==============================================================================
-# 							Dependency Management
-# ==============================================================================
-
-# Target to update dependencies from requirements.txt and requirements-dev.txt files into virtual environment
+## update-dependencies: Update all dependencies
 .PHONY: update-dependencies
 update-dependencies: compile-dependencies sync-dependencies
 
-# Target to sync dependencies from requirements.txt and requirements-dev.txt files into virtual environment
+## sync-dependencies: Sync dependencies using pip-sync
 .PHONY: sync-dependencies
 sync-dependencies:
 	@cd $(BASE_DIR) && $(PIP_SYNC) requirements-dev.txt
 
-# Target to compile dependencies from requirements.in and requirements-dev.in files into requirements.txt and requirements-dev.txt
+## compile-dependencies: Compile all dependency files
 .PHONY: compile-dependencies
 compile-dependencies:
 	@$(MAKE) compile-requirements
 	@$(MAKE) compile-constraints
 	@$(MAKE) compile-dev-requirements
 
+## compile-requirements: Compile main requirements file
 compile-requirements:
 	@cd $(BASE_DIR) && $(PIP_COMPILE) -q --allow-unsafe --resolver=backtracking --generate-hashes --no-strip-extras requirements.in
 
+## compile-constraints: Compile constraints file
 compile-constraints:
 	@cd $(BASE_DIR) && $(PIP_COMPILE) -q --allow-unsafe --resolver=backtracking --upgrade --strip-extras -o constraints.txt requirements.in
 
+## compile-dev-requirements: Compile development requirements file
 compile-dev-requirements:
 	@cd $(BASE_DIR) && $(PIP_COMPILE) -q --allow-unsafe --resolver=backtracking --generate-hashes --no-strip-extras requirements-dev.in
 
@@ -115,7 +116,7 @@ version ?=
 dev ?= false
 update ?= false
 
-# Target to add dependencies
+## add-dependency: Add a new dependency to the project (Usage - make add-dependency package=<name> version=<version> [dev=true] [update=true])
 .PHONY: add-dependency
 add-dependency:
 	@if [ -z "$(package)" ]; then \
@@ -159,71 +160,62 @@ add-dependency:
 		$(MAKE) update-dependencies; \
 	fi
 
-
-# ==============================================================================
-# 								Build and Test
-# ==============================================================================
-# Targets to Build the project
+## build: Build the project
 .PHONY: build
 build: update-dependencies
 	@echo "== Building the project =="
 	@$(PYTHON) -m build
 
-# Targets to Test out the build
+## test: Run project tests
 .PHONY: test
 test:
 	@echo "== Triggering tests =="
 	pytest $(PYTEST_OPTIONS)
 
-# Targets to Publish the project to TestPyPI
+## publish: Publish the project to TestPyPI
 .PHONY: publish
 publish: test build
 	@echo "== Attempting to publish to TestPyPI =="
 	twine upload --repository testpypi $(DIST_DIR)/*
 
-# Target to create an experimental session with package
+## experimental: Create an experimental session with the package
 .PHONY: experimental
 experimental:
 	cd experimental && PYTHONPATH=$(realpath package/python) JUPYTER_PATH=$(realpath .) jupyter-notebook --NotebookApp.token='' --NotebookApp.password=''
 
-# ==============================================================================
-# 								Code Quality with Fix
-# ==============================================================================
-
-# Targets for Code Quality
+## check: Run code quality checks (lint and format)
 .PHONY: check
 check: lint format
 
+## lint: Run linting checks
 .PHONY: lint
 lint:
 	@echo "== Running Linting =="
 	$(VENV_DIR)/bin/ruff check $(SRC_DIR) $(TEST_DIR)
 
+## format: Run code formatting checks
 .PHONY: format
 format:
 	@echo "== Running Formatting =="
 	$(VENV_DIR)/bin/black --check $(SRC_DIR) $(TEST_DIR)
 
-# Targets for Code Quality with Fix
+## fix: Run code quality checks and fix issues (lint-fix and format-fix)
 .PHONY: fix
 fix: lint-fix format-fix
 
+## lint-fix: Run linting and fix issues
 .PHONY: lint-fix
 lint-fix:
 	@echo "== Running Linting =="
 	$(VENV_DIR)/bin/ruff check --fix $(SRC_DIR) $(TEST_DIR)
 
+## format-fix: Run code formatting and fix issues
 .PHONY: format-fix
 format-fix:
-	@echo "== Running Formatmting =="
+	@echo "== Running Formatting =="
 	$(VENV_DIR)/bin/black $(SRC_DIR) $(TEST_DIR)
 
-
-# ================================================================================
-# 								Clean Up
-# =================================================================================
-
-# Clean build artifacts
+## clean: Clean the project (Usage - make clean [dev=true])
 .PHONY: clean
 clean:
 	@echo "== Starting clean process =="
@@ -237,19 +229,11 @@ clean:
 	@rm -rf $(DIST_DIR)
 	@echo "== Clean process completed =="
 
-
-# ================================================================================
-# 								Debug
-# =================================================================================
-
-
-# Debug target
-.PHONY: debug
-
 EXPORT ?= false
 DEBUG_FILE := env.debug
 
-# Debug target
+## debug: Debug build environment (Usage - make debug [EXPORT=true])
+.PHONY: debug
 debug:
 ifeq ($(EXPORT),true)
 	@echo -e "# Environment Information\n\n- *Operating System: $(shell uname -a)\n- **Python Version: $(shell python3 --version)\n- **Installed Packages*:\n\n$(shell pip3 freeze)" > $(DEBUG_FILE)

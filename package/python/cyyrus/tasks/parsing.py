@@ -2,6 +2,7 @@ import base64
 import os
 import warnings
 from io import BytesIO
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 from pdf2image import convert_from_path
@@ -12,14 +13,65 @@ from cyyrus.models.task_type import TaskType
 from cyyrus.tasks.base import BaseTask
 
 
+# For reference based generation, there's always a one-to-one mapping between the input and output
+# For instance, for a given PDF file, we can generate multiple images, so the resulting output would be a list of images encoded in base64
+# For reference free generation, there's no such mapping constraint
+# Hence, the output would be a single image encoded in base64
 class ParsingTask(BaseTask):
+    # The task ID is used to identify the task type
     TASK_ID = TaskType.PARSING
 
-    def _execute(
+    # This flag indicates whether the task supports reference-free execution
+    SUPPORTS_REFERENCE_FREE_EXECUTION = True
+
+    # Default values for task properties
+    DEFAULT_DIRECTORY = str(Path.cwd())
+    DEFAULT_FILE_TYPE = "pdf"
+    DEFAULT_MAX_DEPTH = 5
+
+    EXPECTED_KEY = "path"
+
+    def execute(
         self,
         task_input: Dict[str, Any],
     ) -> Any:
-        return f"Default Task: {task_input} with Task Properties: {self.task_properties}"
+        """
+        Perform the parsing task.
+        """
+        path = self._get_task_input(
+            ParsingTask.EXPECTED_KEY,
+            task_input,
+        )
+
+        # Process the file, in this case, a PDF file
+        return DocUtils._process_pdf(
+            path,
+        )
+
+    def _generate_references(
+        self,
+    ) -> List[Dict[str, Any]]:
+        # Get the task properties
+        directory = self._get_task_property(
+            key="directory",
+            default=ParsingTask.DEFAULT_DIRECTORY,
+        )
+        file_type = self._get_task_property(
+            key="file_type",
+            default=ParsingTask.DEFAULT_FILE_TYPE,
+        )
+        max_depth = self._get_task_property(
+            key="max_depth",
+            default=ParsingTask.DEFAULT_MAX_DEPTH,
+        )
+
+        parsed_list = FileUtils._parse_files(directory, file_type, max_depth)
+        return [
+            {
+                ParsingTask.EXPECTED_KEY: path,
+            }
+            for path in parsed_list
+        ]
 
 
 class ImageUtils:
@@ -93,10 +145,10 @@ class AudioUtils:
 
 class DocUtils:
     DPI = 300
-    FMT = "pdf"
+    FMT = "png"
     SIZE = None
     THREAD_COUNT = 1
-    USE_PDFTOCAIRO = True
+    USE_PDFTOCAIRO = False
 
     @staticmethod
     def _process_pdf(
@@ -136,12 +188,14 @@ class FileUtils:
     @staticmethod
     def _parse_files(
         directory: str,
-        file_types: List[str],
+        file_types: str,
         max_depth: int,
     ) -> List[str]:
         """
-        Parse files in a directory and return a list of file paths.
+        Parse files in a directory and return a list of absolute file paths.
         """
+        # Convert directory to absolute path
+        directory = os.path.abspath(directory)
 
         # Parse files
         result = []
@@ -157,8 +211,8 @@ class FileUtils:
                 for entry in os.scandir(current_dir):
                     if entry.is_file():
                         _, ext = os.path.splitext(entry.name)
-                        if ext[1:] in file_types:  # Remove the dot from extension
-                            result.append(entry.path)
+                        if ext[1:] == file_types:  # Remove the dot from extension
+                            result.append(os.path.abspath(entry.path))
                     elif entry.is_dir():
                         traverse(entry.path, current_depth + 1)
             except PermissionError:
