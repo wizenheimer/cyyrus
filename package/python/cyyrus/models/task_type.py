@@ -66,7 +66,10 @@ TASK_PROPERTIES = {
                 str,
                 ...,
             ),
-            "max_depth": (int, 5),
+            "max_depth": (
+                int,
+                5,
+            ),
         },
         "optional": {},
     },
@@ -81,13 +84,25 @@ TASK_PROPERTIES = {
     },
     TaskType.GENERATION: {
         "required": {
-            "prompt": (str, ...),
+            "prompt": (
+                str,
+                ...,
+            ),
             "model": (
                 LargeLanguageModels,
                 LargeLanguageModels.GPT_4O_MINI,
             ),
+            "response_format": (
+                str,
+                ...,
+            ),
         },
-        "optional": {},
+        "optional": {
+            "max_epochs": (
+                int,
+                100,
+            ),
+        },
     },
     TaskType.EMBEDDING: {
         "required": {

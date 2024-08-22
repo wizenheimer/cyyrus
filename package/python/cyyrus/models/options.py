@@ -12,6 +12,7 @@ class UnparsedFormat(str, Enum):
     # Image Formats
     PNG = "png"
     JPEG = "jpeg"
+    JPG = "jpg"
 
     # Tabular Formats
     JSON = "json"
