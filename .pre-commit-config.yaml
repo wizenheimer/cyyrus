@@ -43,9 +43,22 @@ repos:
             --allow-unsafe,
             --resolver=backtracking,
             --generate-hashes,
-            requirements.in,
+            requirements/requirements.in,
+            --output-file=requirements/requirements.txt,
           ]
-        files: ^requirements\.(in|txt)$
+        files: ^requirements/requirements\.(in|txt)$
+      - id: pip-compile
+        name: pip-compile pip-requirements.txt
+        args:
+          [
+            -q,
+            --allow-unsafe,
+            --resolver=backtracking,
+            --generate-hashes,
+            requirements/requirements.in,
+            --output-file=requirements/pip-requirements.txt,
+          ]
+        files: ^requirements/(requirements\.in|pip-requirements\.txt)$
       - id: pip-compile
         name: pip-compile constraints.txt
         args:
@@ -54,10 +67,10 @@ repos:
             --allow-unsafe,
             --resolver=backtracking,
             --strip-extras,
-            --output-file=constraints.txt,
-            requirements.in,
+            requirements/requirements.in,
+            --output-file=requirements/constraints.txt,
           ]
-        files: ^requirements\.in|constraints\.txt$
+        files: ^requirements/(requirements\.in|constraints\.txt)$
       - id: pip-compile
         name: pip-compile requirements-dev.txt
         args:
@@ -66,6 +79,7 @@ repos:
             --allow-unsafe,
             --resolver=backtracking,
             --generate-hashes,
-            requirements-dev.in,
+            requirements/requirements-dev.in,
+            --output-file=requirements/requirements-dev.txt,
           ]
-        files: ^requirements-dev\.(in|txt)$
+        files: ^requirements/requirements-dev\.(in|txt)$
