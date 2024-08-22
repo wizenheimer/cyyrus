@@ -1,8 +1,6 @@
 from enum import Enum
 
 from cyyrus.models.options import (
-    EmbeddingModels,
-    LargeLanguageModels,
     ParsedFormat,
     UnparsedFormat,
 )
@@ -14,24 +12,12 @@ class TaskType(str, Enum):
 
     # === General Tasks ===
     PARSING = "parsing"  # Ingest and interpret data from different types.
-    SCRAPING = "scraping"  # Collect and extract data from websites or online sources.
-
-    # === Document Processing Tasks ===
-    DOCUMENT_GENERATION = "document_generation"  # Create new documents based on given inputs.
 
     # === Multimodal Tasks ===
     GENERATION = (
         "generation"  # Create new content, such as generating text or audio from given inputs.
     )
-    EMBEDDING = "embedding"  # Transform data into a numerical format that preserves semantic meaning (e.g., word embeddings).
 
-    # === Text Processing Tasks ===
-    CATEGORIZATION = "categorization"  # Classify text into predefined categories or labels.
-
-
-# ==============================================================================
-#                                   Task Properties
-# ==============================================================================
 
 TASK_PROPERTIES = {
     TaskType.DEFAULT: {
@@ -60,28 +46,6 @@ TASK_PROPERTIES = {
             ),
         },
     },
-    TaskType.SCRAPING: {
-        "required": {
-            "url": (
-                str,
-                ...,
-            ),
-            "max_depth": (
-                int,
-                5,
-            ),
-        },
-        "optional": {},
-    },
-    TaskType.DOCUMENT_GENERATION: {
-        "required": {
-            "path": (
-                str,
-                ...,
-            ),
-        },
-        "optional": {},
-    },
     TaskType.GENERATION: {
         "required": {
             "prompt": (
@@ -89,10 +53,10 @@ TASK_PROPERTIES = {
                 ...,
             ),
             "model": (
-                LargeLanguageModels,
-                LargeLanguageModels.GPT_4O_MINI,
+                str,
+                ...,
             ),
-            "response_format": (
+            "api_key": (
                 str,
                 ...,
             ),
@@ -102,28 +66,10 @@ TASK_PROPERTIES = {
                 int,
                 100,
             ),
-        },
-    },
-    TaskType.EMBEDDING: {
-        "required": {
-            "model": (
-                EmbeddingModels,
-                EmbeddingModels.TEXT_EMBEDDING_3_SMALL,  # TODO: add support for image embeddings
+            "response_format": (
+                str,
+                None,
             ),
         },
-        "optional": {},
-    },
-    TaskType.CATEGORIZATION: {
-        "required": {
-            "primary_model": (
-                EmbeddingModels,
-                EmbeddingModels.JINA_EMBEDDING_V2,
-            ),
-            "secondary_model": (
-                LargeLanguageModels,
-                LargeLanguageModels.GPT_4O_MINI,
-            ),
-        },
-        "optional": {},
     },
 }
