@@ -9,8 +9,10 @@ from pdf2image import convert_from_path
 from PIL import Image
 from pydub import AudioSegment
 
+from cyyrus.models.options import LargeLanguageModels, ParsedFormat
 from cyyrus.models.task_type import TaskType
 from cyyrus.tasks.base import BaseTask
+from cyyrus.tasks.generation import ModelUtils
 
 
 # For reference based generation, there's always a one-to-one mapping between the input and output
@@ -28,8 +30,13 @@ class ParsingTask(BaseTask):
     DEFAULT_DIRECTORY = str(Path.cwd())
     DEFAULT_FILE_TYPE = "pdf"
     DEFAULT_MAX_DEPTH = 5
+    DEFAULT_PARSED_FORMAT = ParsedFormat.BASE64
 
     EXPECTED_KEY = "path"
+
+    DEFAULT_PROMPT = """Convert the following image to markdown.
+    Return only the markdown with no explanation text.
+    Do not exclude any content from the image."""
 
     # At present, we support parsing of PDF and image files
     DOCUMENT_TYPE = [
@@ -57,12 +64,61 @@ class ParsingTask(BaseTask):
             key="file_type",
             default=ParsingTask.DEFAULT_FILE_TYPE,
         )
+        parsed_format = self._get_task_property(
+            key="parsed_format",
+            default=ParsingTask.DEFAULT_PARSED_FORMAT,
+        )
 
-        # Process the file, in this case, a PDF file
+        # Process the file based on its type,
+        # Incase the output is required in markdown or base64 format, we need to convert the output to base64
         if file_type in ParsingTask.DOCUMENT_TYPE:
-            return DocUtils._process_document(path)
+            intermediate_results = DocUtils._process_document(
+                path,
+                return_base64=parsed_format == ParsedFormat.BASE64
+                or parsed_format == ParsedFormat.MARKDOWN,
+            )
         elif file_type in ParsingTask.IMAGE_TYPE:
-            return ImageUtils._process_image(path)
+            intermediate_results = ImageUtils._process_image(
+                path,
+                return_base64=parsed_format == ParsedFormat.BASE64
+                or parsed_format == ParsedFormat.MARKDOWN,
+            )
+
+        final_result = []
+        # Convert the intermediate results to the required format
+        if parsed_format == ParsedFormat.MARKDOWN:
+            # Get the model to be used for generation
+            model = self._get_task_property(
+                key="model",
+                default=LargeLanguageModels.GPT_4O_MINI,
+            )
+            prompt = self._get_task_property(
+                key="prompt",
+                default=ParsingTask.DEFAULT_PROMPT,
+            )
+            # Generate the final result
+            for intermediate_result in intermediate_results:
+                # Convert the image to markdown
+                base64_image = (
+                    ImageUtils._image_to_base64(intermediate_result)
+                    if isinstance(intermediate_result, Image.Image)
+                    else intermediate_result
+                )
+                # Generate the final result
+                final_result.append(
+                    ModelUtils.generation(
+                        model=model,
+                        prompt=prompt,
+                        task_input={
+                            "image": base64_image,
+                        },
+                    )
+                )
+        else:
+            final_result = intermediate_results
+
+        # Return the final result
+        return final_result
 
     def _generate_references(
         self,
