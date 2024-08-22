@@ -68,18 +68,18 @@ tasks:
   extract_invoice_data:
     task_type: generation
     task_properties:
-      max_tokens: 100
       model: gpt-4o-mini
       prompt: Extract the invoice data from the document
       response_format: invoice_data
+      api_key: $OPENAI_API_KEY
 
   generate_invoice_questions:
     task_type: generation
     task_properties:
-      max_tokens: 100
       model: gpt-4o-mini
       prompt: Generate questions about the invoice items {invoice_data}
       response_format: invoice_questions
+      api_key: $OPENAI_API_KEY
 
 # Define the columns that will be used in the dataset
 columns:

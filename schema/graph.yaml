@@ -1,0 +1,55 @@
+spec: v0 # Version of the schema
+
+# Define the properties of the dataset
+dataset:
+  # Define the metadata of the dataset
+  metadata:
+    name: graph dataset # Name of the dataset
+    description: Dataset containing the graphical data # Description of the dataset
+    tags: [graphs, insights] # Tags of the dataset
+    license: CC-BY-NC-SA # License of the dataset
+    language: en # Language of the dataset
+
+  # Define how to shuffle the dataset
+  shuffle:
+    seed: 42
+
+  # Define the splits of the dataset
+  splits:
+    train: 0.8 # The sum of all splits should be 1, if not specified the remaining data will be used for training. Could be named train, training
+    test: 0.2 # The sum of all splits should be 1, if not specified the remaining data will be used for training. Could be named test, testing, eval, evaluation
+    seed: 42 # Seed for the split
+
+  # Define the attributes of the dataset
+  attributes:
+    required_columns: [graphs, insights] # List of required columns. If any of these columns are missing, the dataset will not be generated
+    unique_columns: [] # If there are any unique columns, specify them here. Non unique columns will be removed from the dataset
+    nulls: include # Whether or not to include null values in the dataset, include, exclude, special_token
+
+# Define the tasks that will be used in Dataset generation, and their properties
+tasks:
+  parse_images:
+    task_type: parsing
+    task_properties:
+      directory: images # Directory where the files are stored, relative to current path
+      file_type: jpg
+      max_depth: 5
+      parsed_format: base64 # image, base64, or text
+      model: gpt-4o-mini
+      api_key: $OPENAI_API_KEY
+
+  parse_graphs:
+    task_type: generation
+    task_properties:
+      model: gpt-4o-mini
+      prompt: What are the insights from the graph
+      api_key: $OPENAI_API_KEY
+
+# Define the columns that will be used in the dataset
+columns:
+  graphs:
+    task_id: parse_images
+
+  insights:
+    task_id: parse_graphs
+    task_input: [graphs]
