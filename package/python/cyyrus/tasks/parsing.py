@@ -9,7 +9,7 @@ from pdf2image import convert_from_path
 from PIL import Image
 from pydub import AudioSegment
 
-from cyyrus.models.options import LargeLanguageModels, ParsedFormat
+from cyyrus.models.options import ParsedFormat
 from cyyrus.models.task_type import TaskType
 from cyyrus.tasks.base import BaseTask
 from cyyrus.tasks.generation import ModelUtils
@@ -47,6 +47,25 @@ class ParsingTask(BaseTask):
         "jpg",
         "jpeg",
     ]
+
+    def __init__(
+        self,
+        column_name: str,
+        task_properties: Dict[str, Any],
+    ) -> None:
+        """
+        Initialize the parsing task.
+        """
+        super().__init__(
+            column_name,
+            task_properties,
+        )
+        # Set the default prompt in case it is not provided
+        self.task_properties["prompt"] = (
+            ParsingTask.DEFAULT_PROMPT
+            if "prompt" not in self.task_properties
+            else self.task_properties["prompt"]
+        )
 
     def execute(
         self,
@@ -87,15 +106,6 @@ class ParsingTask(BaseTask):
         final_result = []
         # Convert the intermediate results to the required format
         if parsed_format == ParsedFormat.MARKDOWN:
-            # Get the model to be used for generation
-            model = self._get_task_property(
-                key="model",
-                default=LargeLanguageModels.GPT_4O_MINI,
-            )
-            prompt = self._get_task_property(
-                key="prompt",
-                default=ParsingTask.DEFAULT_PROMPT,
-            )
             # Generate the final result
             for intermediate_result in intermediate_results:
                 # Convert the image to markdown
@@ -107,8 +117,7 @@ class ParsingTask(BaseTask):
                 # Generate the final result
                 final_result.append(
                     ModelUtils.generation(
-                        model=model,
-                        prompt=prompt,
+                        task_property=self.task_properties,
                         task_input={
                             "image": base64_image,
                         },
