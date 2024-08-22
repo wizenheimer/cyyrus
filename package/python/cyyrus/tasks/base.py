@@ -27,16 +27,20 @@ class BaseTask(ABC):
         """
         Perform a reference-based execution
 
-        Strategy: Incase the task is reference-free, the task_input will be None and the task will attempt to generate the reference data. The final output will be a list of dictionaries.
+        Strategy: Incase the task is reference-based, the task_input will be a dictionary containing the reference data. The final output will be a dictionary.
         """
-        task_result = {
-            self.column_name: (
-                self.execute(task_input)
-                if not self._trigger_flattening()
-                else self._flatten_dict(self.execute(task_input))
+        interim_result = self.execute(
+            task_input,
+        )
+        if self._trigger_flattening():
+            return self._flatten_dict(
+                d=interim_result,
+                parent_key=self.column_name,
             )
-        }
-        return task_result
+        else:
+            return {
+                self.column_name: interim_result,
+            }
 
     def reference_free_execution(
         self,
@@ -44,7 +48,7 @@ class BaseTask(ABC):
         """
         Perform a reference-free execution.
 
-        Strategy: Incase the task is reference-based, the task_input will be a dictionary containing the reference data. The final output will be a dictionary.
+        Strategy: Incase the task is reference-free, the task_input will be None and the task will attempt to generate the reference data. The final output will be a list of dictionaries.
         """
         if not self.SUPPORTS_REFERENCE_FREE_EXECUTION:
             return []
