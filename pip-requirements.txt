@@ -1,2 +1,0 @@
-# pip-requirements.txt
-pip==24.2

@@ -10,6 +10,7 @@ VENV_DIR := $(BASE_DIR)/.venv
 SRC_DIR := $(BASE_DIR)/package/python
 DIST_DIR := $(BASE_DIR)/dist
 TEST_DIR := $(BASE_DIR)/tests
+REQUIREMENTS_DIR := $(BASE_DIR)/requirements
 
 # Pip tools related configs
 PIP_COMPILE := pip-compile
@@ -75,7 +76,7 @@ init: check-prereqs
 	pre-commit install --hook-type commit-msg
 
 	@echo "== Constraint Development Environment  =="
-	@$(PIP_INSTALL) -r pip-requirements.txt
+	@$(PIP_INSTALL) -r $(REQUIREMENTS_DIR)/pip-requirements.txt
 	@$(PIP_INSTALL) --upgrade setuptools wheel build
 
 ## dev: Set up the development environment
@@ -89,7 +90,7 @@ update-dependencies: compile-dependencies sync-dependencies
 ## sync-dependencies: Sync dependencies using pip-sync
 .PHONY: sync-dependencies
 sync-dependencies:
-	@cd $(BASE_DIR) && $(PIP_SYNC) requirements-dev.txt
+	@cd $(BASE_DIR) && $(PIP_SYNC) $(REQUIREMENTS_DIR)/requirements-dev.txt
 
 ## compile-dependencies: Compile all dependency files
 .PHONY: compile-dependencies
@@ -100,15 +101,15 @@ compile-dependencies:
 
 ## compile-requirements: Compile main requirements file
 compile-requirements:
-	@cd $(BASE_DIR) && $(PIP_COMPILE) -q --allow-unsafe --resolver=backtracking --generate-hashes --no-strip-extras requirements.in
+	@cd $(BASE_DIR) && $(PIP_COMPILE) -q --allow-unsafe --resolver=backtracking --generate-hashes --no-strip-extras -o $(REQUIREMENTS_DIR)/requirements.txt $(REQUIREMENTS_DIR)/requirements.in
 
 ## compile-constraints: Compile constraints file
 compile-constraints:
-	@cd $(BASE_DIR) && $(PIP_COMPILE) -q --allow-unsafe --resolver=backtracking --upgrade --strip-extras -o constraints.txt requirements.in
+	@cd $(BASE_DIR) && $(PIP_COMPILE) -q --allow-unsafe --resolver=backtracking --upgrade --strip-extras -o $(REQUIREMENTS_DIR)/constraints.txt $(REQUIREMENTS_DIR)/requirements.in
 
 ## compile-dev-requirements: Compile development requirements file
 compile-dev-requirements:
-	@cd $(BASE_DIR) && $(PIP_COMPILE) -q --allow-unsafe --resolver=backtracking --generate-hashes --no-strip-extras requirements-dev.in
+	@cd $(BASE_DIR) && $(PIP_COMPILE) -q --allow-unsafe --resolver=backtracking --generate-hashes --no-strip-extras -o $(REQUIREMENTS_DIR)/requirements-dev.txt $(REQUIREMENTS_DIR)/requirements-dev.in
 
 # Define variables for add-dependency target
 package ?=
@@ -126,10 +127,10 @@ add-dependency:
 	@req_file=""; \
 	if [ "$(dev)" = "true" ]; then \
 		echo "Adding to dev requirements"; \
-		req_file="$(BASE_DIR)/requirements-dev.in"; \
+		req_file="$(REQUIREMENTS_DIR)/requirements-dev.in"; \
 	else \
 		echo "Adding to main requirements"; \
-		req_file="$(BASE_DIR)/requirements.in"; \
+		req_file="$(REQUIREMENTS_DIR)/requirements.in"; \
 	fi; \
 	if [ ! -f "$$req_file" ]; then \
 		echo "Error: Requirements file $$req_file not found."; \

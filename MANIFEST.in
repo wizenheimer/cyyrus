@@ -1,11 +1,6 @@
 include LICENSE
 include Makefile
 include commitlint.config.js
-include constraints.txt
-include pip-requirements.txt
 include pyproject.toml
-include requirements-dev.in
-include requirements-dev.txt
-include requirements.in
-include requirements.txt
+include requirements/requirements.in
 recursive-include package/python *
