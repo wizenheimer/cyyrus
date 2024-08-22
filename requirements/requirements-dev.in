@@ -1,0 +1,25 @@
+# requirements-dev.in
+-c requirements.txt
+
+# testing requirements
+pytest==8.3.2
+pytest-clarity==1.0.1
+pytest-xdist==3.6.1
+notebook==7.2.1
+
+# release management
+build==1.2.1
+twine==5.1.1
+setuptools==72.2.0
+
+# linting/formatting/typechecking requirements
+ruff==0.5.7
+black==24.8.0
+pyright==1.1.239
+
+# profiling requirements
+pyinstrument==4.7.2
+memray==1.13.4
+
+# development requirements
+backports.tarfile==1.2.0 # NOTE: To make it compatible with --require-hashes flag
