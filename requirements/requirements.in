@@ -5,3 +5,4 @@ python-dotenv==1.0.1
 pillow==10.4.0
 pydub==0.25.1
 pdf2image==1.17.0
+litellm==1.44.1

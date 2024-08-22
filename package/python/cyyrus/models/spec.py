@@ -1,13 +1,15 @@
 import os
+import re
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, Generator, List, Optional, Set, Tuple, Union
+from typing import Any, DefaultDict, Dict, Generator, List, Optional, Set, Tuple, Union
 from urllib.parse import urlparse
 
 import requests
 import yaml
 from dotenv import load_dotenv
 from pydantic import BaseModel, model_validator
+from pydantic.fields import Field
 
 from cyyrus.errors.column import (
     ColumnIDNotFoundError,
@@ -31,7 +33,10 @@ class Spec(BaseModel):
     spec: SpecVersion
     dataset: Dataset
     tasks: Dict[str, Task]
-    types: Dict[str, CustomType]
+    types: Optional[Dict[str, CustomType]] = Field(
+        default=None,
+        exclude=True,
+    )
     columns: Dict[str, Column]
 
     def __init__(self, *args, **kwargs):
@@ -39,17 +44,39 @@ class Spec(BaseModel):
         self._populate_concrete_model()
 
     def _populate_concrete_model(self):
-        # Extract the custom types
-        custom_types = {
-            type_name: custom_type.model_dump() for type_name, custom_type in self.types.items()
-        }
+        """
+        Create a concrete model for the response_format specified in the task properties.
+        """
+        # Create a defaultdict that returns None for missing keys
+        custom_types: DefaultDict[str, Optional[Dict[str, Any]]] = defaultdict(lambda: None)
 
-        # Update the task properties with the concrete model
+        # Extract the custom types
+        # Populate the defaultdict with the custom types
+        if self.types:
+            for type_name, custom_type in self.types.items():
+                custom_types[type_name] = custom_type.model_dump()
+
+        # Update the task properties with the concrete model, incase response_format is specified
         for task_id, task in self.tasks.items():
+            # Check if the task is of type generation
             if task.task_type == TaskType.GENERATION:
-                response_format_identifier = task.task_properties.get("response_format", None)
-                concrete_type_def = custom_types.get(response_format_identifier)
-                concrete_model = TypeMappingUtils.get_concrete_model(concrete_type_def)
+                # Get the response_format_identifier
+                response_format_identifier = task.task_properties.get(
+                    "response_format",
+                    None,
+                )
+
+                # Skip if response_format is not specified
+                if not response_format_identifier:
+                    continue
+
+                # Get the concrete model for the response_format
+                concrete_type_def = custom_types.get(
+                    response_format_identifier,
+                )
+                concrete_model = TypeMappingUtils.get_concrete_model(
+                    concrete_type_def,
+                )
                 task.task_properties["response_format"] = concrete_model
 
                 # Update the column properties with the concrete model
@@ -59,12 +86,18 @@ class Spec(BaseModel):
         str,
         List[str],
     ]:
+        """
+        Extract the DAG representation of the spec.
+        """
         return {
             column_name: list(column.task_input) for column_name, column in self.columns.items()
         }
 
     @model_validator(mode="after")
     def validate_dag(cls, values):
+        """
+        Validate the DAG representation of the spec.
+        """
         dag = values.extract_dag_representation()
 
         def has_cycle(node: str, visited: Set[str], rec_stack: Set[str]) -> bool:
@@ -97,6 +130,9 @@ class Spec(BaseModel):
 
     @model_validator(mode="after")
     def validate_columns_for_orphans(cls, values):
+        """
+        Validate that all columns have a task associated with them.
+        """
         # Note: duplicates are handled by Pydantic + YAML Parser
         required_columns = set(values.dataset.attributes.required_columns)
         all_column_names = set(values.columns.keys())
@@ -114,6 +150,9 @@ class Spec(BaseModel):
 
     @model_validator(mode="after")
     def validate_task_ids(cls, values):
+        """
+        Validate that all columns have a valid task_id associated with them.
+        """
         tasks = values.tasks
         for column_name, column in values.columns.items():
             if column.task_id not in tasks:
@@ -134,6 +173,9 @@ class Spec(BaseModel):
         TaskType,
         Dict[str, Union[int, str, float]],
     ]:
+        """
+        Extract the task information for a given column.
+        """
         column = self.columns.get(column_name)
 
         if not column:
@@ -164,6 +206,9 @@ class Spec(BaseModel):
     def generate_mermaid_graph(
         self,
     ) -> Mermaid:
+        """
+        Generate a Mermaid graph representation of the DAG.
+        """
         dag = self.extract_dag_representation()
         mermaid_code = ["graph LR"]
         for task, dependencies in dag.items():
@@ -186,6 +231,9 @@ class Spec(BaseModel):
         None,
         None,
     ]:
+        """
+        Generate the levels of the DAG.
+        """
         # Extract the DAG representation
         dependencies: Dict[str, List[str]] = self.extract_dag_representation()
 
@@ -193,27 +241,34 @@ class Spec(BaseModel):
             yield [self.extract_task_info(node) for node in level]
 
 
-def env_var_constructor(
-    loader,
-    node,
-):
+def env_var_constructor(loader, node):
+    """
+    Custom YAML constructor to replace environment variables.
+    """
     value = loader.construct_scalar(node)
-    return os.environ.get(value, value)
+
+    # Handle ${VAR} syntax
+    match = re.match(r"\${(.+)}", value)
+    if match:
+        env_var = match.group(1)
+    else:
+        # Handle $VAR syntax, allowing for whitespace after $
+        env_var = value.strip().lstrip("$").strip()
+
+    # Look up the environment variable, fall back to the original value if not found
+    return os.environ.get(env_var, value)
 
 
 def load_spec(
     path_or_url: str,
     env_file: Optional[str] = None,
-) -> Spec:
+):
     """
     Load a spec from either a local file path or a URL, with support for environment variables.
     """
     # Load environment variables from .env file if specified
     if env_file:
         load_dotenv(env_file)
-
-    # Add custom constructor for environment variables
-    yaml.add_constructor("!env", env_var_constructor)
 
     # Check if the source is a URL
     parsed_url = urlparse(path_or_url)
@@ -249,9 +304,29 @@ def load_spec(
 
     # Parse the YAML content
     try:
-        return Spec(**yaml.safe_load(yaml_content))
+        # Use a custom loader that expands environment variables
+        class EnvVarLoader(yaml.SafeLoader):
+            pass
+
+        # Add implicit resolver for environment variables
+        EnvVarLoader.add_implicit_resolver(
+            "env_var",
+            re.compile(r"(\$\s*[A-Za-z_][A-Za-z0-9_]*|\$\{[A-Za-z_][A-Za-z0-9_]*\})"),
+            first=["$"],
+        )
+
+        # Add constructor for environment variables
+        EnvVarLoader.add_constructor("env_var", env_var_constructor)
+
+        # Parse the YAML content
+        return Spec(**yaml.load(yaml_content, Loader=EnvVarLoader))
     except yaml.YAMLError as e:
-        raise SchemaParsingError(extra_info={"error": str(e)})
+        # Raise an error if the YAML parsing fails
+        raise SchemaParsingError(
+            extra_info={
+                "error": str(e),
+            },
+        )
 
 
 def level_order_traversal(
@@ -260,6 +335,9 @@ def level_order_traversal(
         List[str],
     ],
 ):
+    """
+    Perform a level order traversal of the DAG.
+    """
     # Create a reverse dependency graph using defaultdict
     reverse_deps = defaultdict(list)
     all_nodes = set()

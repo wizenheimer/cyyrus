@@ -17,28 +17,31 @@ class Task(BaseModel):
 
     @model_validator(mode="after")
     def validate_task_properties(self):
+        """
+        Validate the task properties
+        """
         required_props, optional_props = TaskPropertyUtils.get_task_property(
             self.task_type,
         )
 
-        validated_props = {}
+        all_props = {
+            **required_props,
+            **optional_props,
+        }
 
-        for prop, (prop_type, default_value) in {**required_props, **optional_props}.items():
+        for prop, (prop_type, default_value) in all_props.items():
             if prop in self.task_properties:
                 try:
-                    validated_props[prop] = prop_type(
+                    self.task_properties[prop] = prop_type(
                         self.task_properties[prop],
                     )
                 except (ValueError, TypeError) as e:
                     raise ValueError(f"Invalid value for {prop}: {str(e)}")
-            elif prop in required_props:
-                if default_value is ...:
-                    raise ValueError(f"Missing required property {prop} for {self.task_type}")
-                validated_props[prop] = default_value
-            elif prop in optional_props and default_value is not ...:
-                validated_props[prop] = default_value
+            elif prop in required_props and default_value is ...:
+                raise ValueError(f"Missing required property {prop} for {self.task_type}")
+            elif default_value is not ...:
+                self.task_properties[prop] = default_value
 
-        self.task_properties = validated_props
         return self
 
 
@@ -47,6 +50,9 @@ class TaskPropertyUtils:
     def get_task_property(
         task_type: TaskType,
     ) -> Any:
+        """
+        Get the required and optional properties for a given task type
+        """
         properties = TASK_PROPERTIES.get(
             task_type,
             {},
