@@ -32,15 +32,12 @@ class Composer:
         self.dataframe: pd.DataFrame = pd.DataFrame()
         self.task_artifacts = self._infer_tasks()
 
-    def _infer_tasks(
-        self,
-    ) -> Dict[TaskType, Type[BaseTask]]:
+    def _infer_tasks(self) -> Dict[TaskType, Type[BaseTask]]:
         try:
             module = importlib.import_module("cyyrus.tasks")
-        except ImportError:
+        except ImportError as _:
             raise
         else:
-
             task_dict: Dict[TaskType, Type[BaseTask]] = {}
 
             for _, cls in inspect.getmembers(module, inspect.isclass):

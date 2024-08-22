@@ -1,3 +1,4 @@
+import os
 import subprocess
 import sys
 
@@ -41,7 +42,22 @@ def parse_requirements(filename):
         ]
 
 
-requirements = parse_requirements("requirements.txt")
+requirements_path = os.path.join("requirements", "requirements.in")
+requirements = parse_requirements(requirements_path)
+
+packages = find_packages(
+    where="package/python",
+    exclude=[
+        # Exclude tests if present
+        "*.tests",
+        "*.tests.*",
+        "tests.*",
+        "tests",
+        # Exclude __pycache__ directories
+        "*.__pycache__",
+        "*.__pycache__.*",
+    ],
+)
 
 setup(
     name="cyyrus",
@@ -50,7 +66,7 @@ setup(
     author="wizenheimer",
     author_email="cyyruslabs@gmail.com",
     url="https://github.com/wizenheimer/cyyrus",
-    packages=find_packages("package/python"),
+    packages=packages,
     package_dir={
         "": "package/python",
     },

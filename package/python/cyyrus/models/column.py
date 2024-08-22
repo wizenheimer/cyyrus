@@ -4,10 +4,6 @@ from pydantic import BaseModel, Field
 
 
 class Column(BaseModel):
-    column_type: str = Field(
-        ...,
-        description="Type of the column",
-    )
     description: str = Field(
         default="",
         description="Description of the column",

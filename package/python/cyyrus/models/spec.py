@@ -12,7 +12,6 @@ from pydantic import BaseModel, model_validator
 from cyyrus.errors.column import (
     ColumnIDNotFoundError,
     ColumnTaskIDNotFoundError,
-    ColumnTypeNotFoundError,
 )
 from cyyrus.errors.schema import (
     SchemaFileNotFoundError,
@@ -24,7 +23,7 @@ from cyyrus.errors.task import (
 from cyyrus.models.column import Column
 from cyyrus.models.dataset import Dataset, SpecVersion
 from cyyrus.models.task import Task, TaskType
-from cyyrus.models.types import CustomType, DataType, TypeMappingUtils
+from cyyrus.models.types import CustomType, TypeMappingUtils
 from cyyrus.utils.mermaid import Mermaid
 
 
@@ -111,24 +110,6 @@ class Spec(BaseModel):
                 },
             )
 
-        return values
-
-    @model_validator(mode="after")
-    def validate_column_types(cls, values):
-        types = values.types
-        for column_name, column in values.columns.items():
-            # if column.column_type not in types and column.column_type not in DataType.__members__:
-            if column.column_type not in types and column.column_type not in [
-                dt.value for dt in DataType
-            ]:
-                raise ColumnTypeNotFoundError(
-                    extra_info={
-                        "column_name": column_name,
-                        "column_type": column.column_type,
-                    },
-                )
-
-        # We don't need to validate reference types here anymore as Pydantic will handle it
         return values
 
     @model_validator(mode="after")
