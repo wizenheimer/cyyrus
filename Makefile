@@ -45,6 +45,9 @@ else
     PYTHON := python3
 endif
 
+# Define the default target
+.DEFAULT_GOAL := help
+
 # Help target
 .PHONY: help
 help:
