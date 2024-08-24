@@ -11,17 +11,7 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, model_validator
 from pydantic.fields import Field
 
-from cyyrus.errors.column import (
-    ColumnIDNotFoundError,
-    ColumnTaskIDNotFoundError,
-)
-from cyyrus.errors.schema import (
-    SchemaFileNotFoundError,
-    SchemaParsingError,
-)
-from cyyrus.errors.task import (
-    TaskCyclicDependencyError,
-)
+from cyyrus.constants.messages import Messages
 from cyyrus.models.column import Column
 from cyyrus.models.dataset import Dataset, SpecVersion
 from cyyrus.models.task import Task, TaskType
@@ -132,11 +122,8 @@ class Spec(BaseModel):
             if node not in visited:
                 logger.debug(f"Checking for cycle starting at `{node}` node")
                 if has_cycle(node, visited, rec_stack):
-                    raise TaskCyclicDependencyError(
-                        extra_info={
-                            "node": node,
-                        }
-                    )
+                    logger.error(f"{Messages.TASK_INPUTS_CYCLIC_DEPENDENCY}: {node}")
+                    raise ValueError(Messages.TASK_INPUTS_CYCLIC_DEPENDENCY)
 
         logger.debug("DAG representation is valid")
         return values
@@ -154,12 +141,8 @@ class Spec(BaseModel):
         # Check if all required columns exist in either columns or references
         missing_columns = required_columns - all_column_names
         if missing_columns:
-            logger.error(f"Missing required columns: {missing_columns}")
-            raise ColumnIDNotFoundError(
-                extra_info={
-                    "missing_columns": str(missing_columns),
-                },
-            )
+            logger.error(f"{Messages.REQUIRED_COLUMN_MISSING} columns: {missing_columns}")
+            raise ValueError(Messages.REQUIRED_COLUMN_MISSING)
 
         logger.debug("Columns are valid")
         return values
@@ -173,13 +156,10 @@ class Spec(BaseModel):
         tasks = values.tasks
         for column_name, column in values.columns.items():
             if column.task_id not in tasks:
-                logger.error(f"Task ID not found for column: {column_name}")
-                raise ColumnTaskIDNotFoundError(
-                    extra_info={
-                        "column_name": column_name,
-                        "task_id": column.task_id,
-                    },
+                logger.error(
+                    f"{Messages.COLUMN_TASK_ID_NOT_FOUND}: {column.task_id} for {column_name}"
                 )
+                raise ValueError(Messages.COLUMN_TASK_ID_NOT_FOUND)
         logger.debug("Task IDs are validated")
         return values
 
@@ -199,19 +179,13 @@ class Spec(BaseModel):
 
         if not column:
             # If the column is still not found, raise an error
-            raise ColumnIDNotFoundError(
-                extra_info={
-                    "column_name": column_name,
-                }
-            )
+            logger.error(f"{Messages.COLUMNN_ID_NOT_FOUND}: {column_name}")
+            raise ValueError(Messages.COLUMNN_ID_NOT_FOUND)
 
         task = self.tasks.get(column.task_id)
         if not task:
-            raise ColumnTaskIDNotFoundError(
-                extra_info={
-                    "column_name": column_name,
-                }
-            )
+            logger.error(f"{Messages.COLUMN_TASK_ID_NOT_FOUND}: {column_name}")
+            raise ValueError(Messages.COLUMN_TASK_ID_NOT_FOUND)
 
         return (
             # Column Information
@@ -311,12 +285,8 @@ def load_spec(
             response.raise_for_status()  # Raise an exception for HTTP errors
             yaml_content = response.text
         except requests.RequestException as e:
-            logger.error(f"Failed to fetch spec from {path_or_url}: {e}")
-            raise SchemaFileNotFoundError(
-                extra_info={
-                    "error": str(e),
-                }
-            )
+            logger.error(f"{Messages.SCHEMA_FILE_COULD_NOT_BE_LOCATED} {path_or_url}: {e}")
+            raise ValueError(Messages.SCHEMA_FILE_COULD_NOT_BE_LOCATED)
     elif Path(path_or_url).is_file():
         # It's a local file, so read its content
         try:
@@ -324,20 +294,14 @@ def load_spec(
             with open(path_or_url, "r") as file:
                 yaml_content = file.read()
         except IOError as e:
-            logger.error(f"Failed to read spec from {path_or_url}: {e}")
-            raise SchemaFileNotFoundError(
-                extra_info={
-                    "error": str(e),
-                }
-            )
+            logger.error(f"{Messages.SCHEMA_FILE_COULD_NOT_BE_LOCATED} {path_or_url}: {e}")
+            raise ValueError(Messages.SCHEMA_FILE_COULD_NOT_BE_LOCATED)
     else:
         # The path is neither a URL nor a file
-        logger.error(f"Unrecognized path: {path_or_url}")
-        raise SchemaFileNotFoundError(
-            extra_info={
-                "unrecognized path": path_or_url,
-            }
+        logger.error(
+            f"{Messages.SCHEMA_FILE_COULD_NOT_BE_LOCATED} unrecognized path: {path_or_url}"
         )
+        raise ValueError(Messages.SCHEMA_FILE_COULD_NOT_BE_LOCATED)
 
     # Parse the YAML content
     try:
@@ -363,12 +327,8 @@ def load_spec(
         return parsed_spec
     except yaml.YAMLError as e:
         # Raise an error if the YAML parsing fails
-        logger.error(f"Failed to parse the spec: {e}")
-        raise SchemaParsingError(
-            extra_info={
-                "error": str(e),
-            },
-        )
+        logger.error(f"{Messages.SCHEMA_COULD_NOT_BE_PARSED}: {e}")
+        raise ValueError(Messages.SCHEMA_COULD_NOT_BE_PARSED)
 
 
 def level_order_traversal(
