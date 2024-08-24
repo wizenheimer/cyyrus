@@ -9,6 +9,9 @@ from cyyrus.errors.dataset import (
     SplitsDontAddUpWarning,
     SplitValueInvalidWarning,
 )
+from cyyrus.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class SpecVersion(str, Enum):
@@ -63,9 +66,11 @@ class DatasetSplits(BaseModel):
 
     @model_validator(mode="after")
     def check_splits_sum(cls, values):
+        logger.debug(f"Checking splits sum: {values}")
         train, test = values.train, values.test
 
         if train is None and test is None:
+            logger.debug("Both train and test splits are None, attempting to set default values")
             values.train, values.test = 0.8, 0.2
             warnings.warn(
                 SplitValueInvalidWarning(
@@ -78,6 +83,7 @@ class DatasetSplits(BaseModel):
                 )
             )
         elif train is None:
+            logger.debug(f"Train split is None, attempting to compute from test split: {test}")
             values.train = max(0, 1 - test)
             warnings.warn(
                 SplitValueInvalidWarning(
@@ -90,6 +96,7 @@ class DatasetSplits(BaseModel):
                 )
             )
         elif test is None:
+            logger.debug("Test split is None, attempting to compute from train split")
             values.test = max(0, 1 - train)
             warnings.warn(
                 SplitValueInvalidWarning(
@@ -102,7 +109,10 @@ class DatasetSplits(BaseModel):
                 )
             )
 
+        logger.debug(f"Checking splits sum: {values}, train: {train}, test: {test}")
         normalized = cls.normalize_split_sizes(values.train, values.test)
+
+        logger.debug(f"Normalized splits: {normalized}")
         values.train, values.test = normalized
 
         return values
@@ -130,6 +140,7 @@ class DatasetSplits(BaseModel):
     @field_validator("train", "test")
     @classmethod
     def check_not_negative(cls, v: Optional[float]) -> Optional[float]:
+        logger.debug(f"Checking if {v} is negative")
         if v is not None and v < 0:
             warnings.warn(
                 SplitValueInvalidWarning(

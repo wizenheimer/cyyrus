@@ -5,6 +5,9 @@ from pydantic.config import ConfigDict
 from pydantic.functional_validators import model_validator
 
 from cyyrus.models.task_type import TASK_PROPERTIES, TaskType
+from cyyrus.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class Task(BaseModel):
@@ -20,6 +23,7 @@ class Task(BaseModel):
         """
         Validate the task properties
         """
+        logger.debug(f"Validating task properties for {self.task_type}")
         required_props, optional_props = TaskPropertyUtils.get_task_property(
             self.task_type,
         )
@@ -42,6 +46,7 @@ class Task(BaseModel):
             elif default_value is not ...:
                 self.task_properties[prop] = default_value
 
+        logger.debug(f"Task properties {list(self.task_properties.keys())[:2]}... validated")
         return self
 
 
@@ -66,4 +71,5 @@ class TaskPropertyUtils:
             {},
         )
 
+        logger.debug(f"Fetched Task properties for {task_type}")
         return required_props, optional_props

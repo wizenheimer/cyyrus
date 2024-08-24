@@ -26,7 +26,10 @@ from cyyrus.models.column import Column
 from cyyrus.models.dataset import Dataset, SpecVersion
 from cyyrus.models.task import Task, TaskType
 from cyyrus.models.types import CustomType, TypeMappingUtils
+from cyyrus.utils.logging import get_logger
 from cyyrus.utils.mermaid import Mermaid
+
+logger = get_logger(__name__)
 
 
 class Spec(BaseModel):
@@ -47,6 +50,7 @@ class Spec(BaseModel):
         """
         Create a concrete model for the response_format specified in the task properties.
         """
+        logger.debug("Attempting to populate concrete model for response_format")
         # Create a defaultdict that returns None for missing keys
         custom_types: DefaultDict[str, Optional[Dict[str, Any]]] = defaultdict(lambda: None)
 
@@ -78,9 +82,15 @@ class Spec(BaseModel):
                     concrete_type_def,
                 )
                 task.task_properties["response_format"] = concrete_model
+                logger.debug(
+                    f"Populated concrete model for response_format {response_format_identifier}"
+                )
 
                 # Update the column properties with the concrete model
                 self.tasks[task_id] = task
+                logger.debug(f"Updated task {task_id} with concrete model")
+
+        logger.debug("Populated concrete models for response_format")
 
     def extract_dag_representation(self) -> Dict[
         str,
@@ -98,6 +108,7 @@ class Spec(BaseModel):
         """
         Validate the DAG representation of the spec.
         """
+        logger.debug("Validating the DAG representation of the spec")
         dag = values.extract_dag_representation()
 
         def has_cycle(node: str, visited: Set[str], rec_stack: Set[str]) -> bool:
@@ -119,6 +130,7 @@ class Spec(BaseModel):
 
         for node in dag:
             if node not in visited:
+                logger.debug(f"Checking for cycle starting at `{node}` node")
                 if has_cycle(node, visited, rec_stack):
                     raise TaskCyclicDependencyError(
                         extra_info={
@@ -126,6 +138,7 @@ class Spec(BaseModel):
                         }
                     )
 
+        logger.debug("DAG representation is valid")
         return values
 
     @model_validator(mode="after")
@@ -133,6 +146,7 @@ class Spec(BaseModel):
         """
         Validate that all columns have a task associated with them.
         """
+        logger.debug("Validating columns for orphans")
         # Note: duplicates are handled by Pydantic + YAML Parser
         required_columns = set(values.dataset.attributes.required_columns)
         all_column_names = set(values.columns.keys())
@@ -140,12 +154,14 @@ class Spec(BaseModel):
         # Check if all required columns exist in either columns or references
         missing_columns = required_columns - all_column_names
         if missing_columns:
+            logger.error(f"Missing required columns: {missing_columns}")
             raise ColumnIDNotFoundError(
                 extra_info={
                     "missing_columns": str(missing_columns),
                 },
             )
 
+        logger.debug("Columns are valid")
         return values
 
     @model_validator(mode="after")
@@ -153,15 +169,18 @@ class Spec(BaseModel):
         """
         Validate that all columns have a valid task_id associated with them.
         """
+        logger.debug("Validating task IDs")
         tasks = values.tasks
         for column_name, column in values.columns.items():
             if column.task_id not in tasks:
+                logger.error(f"Task ID not found for column: {column_name}")
                 raise ColumnTaskIDNotFoundError(
                     extra_info={
                         "column_name": column_name,
                         "task_id": column.task_id,
                     },
                 )
+        logger.debug("Task IDs are validated")
         return values
 
     def extract_task_info(
@@ -203,12 +222,23 @@ class Spec(BaseModel):
             task.task_properties,
         )
 
-    def generate_mermaid_graph(
+    def to_dict(
+        self,
+        *args,
+        **kwargs,
+    ):
+        """
+        Convert the Spec object to a dictionary.
+        """
+        return super().model_dump(*args, **kwargs)
+
+    def preview(
         self,
     ) -> Mermaid:
         """
         Generate a Mermaid graph representation of the DAG.
         """
+        logger.debug("Generating a Mermaid graph representation of the DAG")
         dag = self.extract_dag_representation()
         mermaid_code = ["graph LR"]
         for task, dependencies in dag.items():
@@ -268,6 +298,7 @@ def load_spec(
     """
     # Load environment variables from .env file if specified
     if env_file:
+        logger.debug(f"Loading environment variables from {env_file}")
         load_dotenv(env_file)
 
     # Check if the source is a URL
@@ -275,10 +306,12 @@ def load_spec(
     if parsed_url.scheme and parsed_url.netloc:
         # It's a URL, so use requests to fetch the content
         try:
+            logger.info(f"Fetching spec from {path_or_url}")
             response = requests.get(path_or_url)
             response.raise_for_status()  # Raise an exception for HTTP errors
             yaml_content = response.text
         except requests.RequestException as e:
+            logger.error(f"Failed to fetch spec from {path_or_url}: {e}")
             raise SchemaFileNotFoundError(
                 extra_info={
                     "error": str(e),
@@ -287,15 +320,19 @@ def load_spec(
     elif Path(path_or_url).is_file():
         # It's a local file, so read its content
         try:
+            logger.info(f"Reading spec from {path_or_url}")
             with open(path_or_url, "r") as file:
                 yaml_content = file.read()
         except IOError as e:
+            logger.error(f"Failed to read spec from {path_or_url}: {e}")
             raise SchemaFileNotFoundError(
                 extra_info={
                     "error": str(e),
                 }
             )
     else:
+        # The path is neither a URL nor a file
+        logger.error(f"Unrecognized path: {path_or_url}")
         raise SchemaFileNotFoundError(
             extra_info={
                 "unrecognized path": path_or_url,
@@ -319,9 +356,14 @@ def load_spec(
         EnvVarLoader.add_constructor("env_var", env_var_constructor)
 
         # Parse the YAML content
-        return Spec(**yaml.load(yaml_content, Loader=EnvVarLoader))
+        logger.info("Parsing the spec")
+        parsed_spec = Spec(**yaml.load(yaml_content, Loader=EnvVarLoader))
+
+        logger.info("Parsed and validated the spec")
+        return parsed_spec
     except yaml.YAMLError as e:
         # Raise an error if the YAML parsing fails
+        logger.error(f"Failed to parse the spec: {e}")
         raise SchemaParsingError(
             extra_info={
                 "error": str(e),
@@ -338,6 +380,7 @@ def level_order_traversal(
     """
     Perform a level order traversal of the DAG.
     """
+    logger.debug("Performing level order traversal of the DAG")
     # Create a reverse dependency graph using defaultdict
     reverse_deps = defaultdict(list)
     all_nodes = set()
