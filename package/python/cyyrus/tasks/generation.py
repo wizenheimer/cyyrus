@@ -1,9 +1,11 @@
 import base64
+import copy
 import inspect
 import io
 import json
 import string
 import sys
+from functools import lru_cache
 from typing import Any, Dict, List
 
 import litellm
@@ -26,15 +28,28 @@ catch_all = error_handler(
 )
 
 
-# TODO: add support for debug flags
 class SuppressOutput:
-    def __enter__(self):
+    def __init__(
+        self,
+    ):
+        self._stdout = None
+        self._stderr = None
+
+    def __enter__(
+        self,
+    ):
         self._stdout = sys.stdout
         self._stderr = sys.stderr
         sys.stdout = io.StringIO()
         sys.stderr = io.StringIO()
+        return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type,
+        exc_val,
+        exc_tb,
+    ):
         sys.stdout = self._stdout
         sys.stderr = self._stderr
 
@@ -78,7 +93,6 @@ class GenerationTask(BaseTask):
             key="max_epochs",
             default=GenerationTask.MAX_EPOCH,
         )
-
         # Attempt to generate the reference data
         logger.debug(f"Generating references for task {self.TASK_ID} with {max_epochs} epochs ...")
         return [{} for _ in range(max_epochs)]
@@ -87,6 +101,7 @@ class GenerationTask(BaseTask):
 class ModelUtils:
 
     @staticmethod
+    @lru_cache(maxsize=1)
     def get_valid_completion_args():
         # Inspect the litellm.completion function
         completion_params = inspect.signature(litellm.completion).parameters
@@ -98,7 +113,9 @@ class ModelUtils:
         template: str | List[str],
         **kwargs: Any,
     ) -> str:
+        logger = logger = get_logger(__name__)
         logger.debug("Attempting to format response with template")
+
         if isinstance(template, list):
             # If template is a list, join it into a single string
             template = " ".join(template)
@@ -117,6 +134,19 @@ class ModelUtils:
         return DefaultFormatter().format(template, **kwargs)
 
     @staticmethod
+    def log_completion_args(
+        completion_args: Dict[str, Any],
+    ):
+        logger.debug("logging completion arguments ...")
+        redacted_log_arguments = [
+            "api_key",
+        ]
+        for key, value in completion_args.items():
+            logger.debug(
+                f"{key}: {value}" if key not in redacted_log_arguments else f"{key}: <redacted>"
+            )
+
+    @staticmethod
     @catch_all
     def generation(
         task_property: Dict[str, Any],
@@ -126,8 +156,12 @@ class ModelUtils:
         Process the model.
         """
         logger.debug("Processing generation task ...")
+
+        # Create a copy of the task property to avoid modifying the original
+        generation_property = copy.deepcopy(task_property)
+
         # Converts the prompt into a formatted string of messages
-        prompt = task_property.pop("prompt", "")
+        prompt = generation_property.pop("prompt", "")
         formatted_prompt = ModelUtils.safe_format(
             prompt,
             **task_input,
@@ -139,7 +173,7 @@ class ModelUtils:
             }
         ]
 
-        model = task_property.get(
+        model = generation_property.get(
             "model",
             LargeLanguageModels.GPT_4O_MINI,
         )
@@ -163,21 +197,31 @@ class ModelUtils:
                 "content": content,
             }
         ]
-        # Update task_property with the correct messages format
-        task_property["messages"] = messages
+        # Update generation_property with the correct messages format
+        generation_property["messages"] = messages
 
-        if task_property.get("response_format", None) is None:
-            task_property.pop("response_format", None)
+        if generation_property.get("response_format", None) is None:
+            logger.debug("No response format specified, defaulting to unstructured text ...")
+            generation_property.pop("response_format", None)
+        else:
+            logger.debug("Response format specified, attempting to process ...")
 
         valid_args = ModelUtils.get_valid_completion_args()
-        filtered_task_property = {k: v for k, v in task_property.items() if k in valid_args}
 
+        filtered_generation_property = {
+            k: v for k, v in generation_property.items() if k in valid_args
+        }
+        ModelUtils.log_completion_args(filtered_generation_property)
+
+        # add conditional log suppression
         with SuppressOutput():
-            response = litellm.completion(**filtered_task_property)
+            response = litellm.completion(
+                **filtered_generation_property,
+            )
 
         result = response.choices[0].message.content  # type: ignore
 
-        if "response_format" in task_property.keys():
+        if "response_format" in generation_property.keys():
             result = ModelUtils.safe_str_to_dict(result)
 
         return result
