@@ -1,14 +1,10 @@
-import warnings
 from enum import Enum
 from typing import List, Optional, Tuple
 
 from pydantic import BaseModel, Field, field_validator
 from pydantic.functional_validators import model_validator
 
-from cyyrus.errors.dataset import (
-    SplitsDontAddUpWarning,
-    SplitValueInvalidWarning,
-)
+from cyyrus.constants.messages import Messages
 from cyyrus.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -70,44 +66,30 @@ class DatasetSplits(BaseModel):
         train, test = values.train, values.test
 
         if train is None and test is None:
+            logger.warn(Messages.SPLITS_DONT_ADD_UP)
             logger.debug("Both train and test splits are None, attempting to set default values")
+
             values.train, values.test = 0.8, 0.2
-            warnings.warn(
-                SplitValueInvalidWarning(
-                    extra_info={
-                        "new train split": 0.8,
-                        "new test split": 0.2,
-                        "old train split": train,
-                        "old test split": test,
-                    }
-                )
-            )
+
+            logger.debug(f"Old train split: {train}, Old test split: {test}")
+            logger.debug(f"New train split: {values.train}, New test split: {values.test}")
+
         elif train is None:
+            logger.warn(Messages.SPLIT_VALUE_INVALID)
             logger.debug(f"Train split is None, attempting to compute from test split: {test}")
+
             values.train = max(0, 1 - test)
-            warnings.warn(
-                SplitValueInvalidWarning(
-                    extra_info={
-                        "new train split": values.train,
-                        "new test split": test,
-                        "old train split": train,
-                        "old test split": test,
-                    }
-                )
-            )
+
+            logger.debug(f"Old train split: {train}, Old test split: {test}")
+            logger.debug(f"New train split: {values.train}, New test split: {values.test}")
         elif test is None:
+            logger.warn(Messages.SPLIT_VALUE_INVALID)
             logger.debug("Test split is None, attempting to compute from train split")
+
             values.test = max(0, 1 - train)
-            warnings.warn(
-                SplitValueInvalidWarning(
-                    extra_info={
-                        "new train split": train,
-                        "new test split": values.test,
-                        "old train split": train,
-                        "old test split": test,
-                    }
-                )
-            )
+
+            logger.debug(f"Old train split: {train}, Old test split: {test}")
+            logger.debug(f"New train split: {values.train}, New test split: {values.test}")
 
         logger.debug(f"Checking splits sum: {values}, train: {train}, test: {test}")
         normalized = cls.normalize_split_sizes(values.train, values.test)
@@ -124,16 +106,9 @@ class DatasetSplits(BaseModel):
     ) -> Tuple[float, float]:
         total = train_size + test_size
         if total <= 0:
-            warnings.warn(
-                SplitsDontAddUpWarning(
-                    extra_info={
-                        "new train split": 0.8,
-                        "new test split": 0.2,
-                        "old train split": train_size,
-                        "old test split": test_size,
-                    }
-                )
-            )
+            logger.warning(f"{Messages.SPLITS_DONT_ADD_UP}")
+            logger.warning(f"Old train split: {train_size}, Old test split: {test_size}")
+            logger.warning(f"New train split: {0.8}, New test split: {0.2}")
             return 0.8, 0.2
         return round(train_size / total, 3), round(test_size / total, 3)
 
@@ -142,14 +117,8 @@ class DatasetSplits(BaseModel):
     def check_not_negative(cls, v: Optional[float]) -> Optional[float]:
         logger.debug(f"Checking if {v} is negative")
         if v is not None and v < 0:
-            warnings.warn(
-                SplitValueInvalidWarning(
-                    extra_info={
-                        "old value": v,
-                        "new value": abs(v),
-                    }
-                )
-            )
+            logger.warning(Messages.SPLIT_VALUE_INVALID)
+            logger.debug(f"Old value: {v}, New value: {abs(v)}")
             return abs(v)
         return v
 

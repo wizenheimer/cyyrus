@@ -1,6 +1,5 @@
 import importlib
 import inspect
-import warnings
 from typing import (
     Any,
     Dict,
@@ -17,10 +16,7 @@ from cyyrus.composer.dataframe import (
     DatasetUtils,
 )
 from cyyrus.composer.progress import conditional_tqdm
-from cyyrus.errors.composer import (
-    AllRowsExcludedDueToNanWarning,
-    InvalidKeyColumnError,
-)
+from cyyrus.constants.messages import Messages
 from cyyrus.models.spec import Spec
 from cyyrus.models.task import TaskType
 from cyyrus.tasks.base import BaseTask
@@ -90,6 +86,7 @@ class Composer:
                     output_column=output_column,
                     task_type=task_type,
                     task_properties=task_properties,
+                    level_index=level_index,
                 )
 
     def execute(
@@ -98,6 +95,7 @@ class Composer:
         output_column: str,
         task_type: TaskType,
         task_properties: Dict[str, Any],
+        level_index: int = 0,
         dry_run: bool = False,
     ):
         logger.info(f"Executing task: {task_type}")
@@ -121,7 +119,7 @@ class Composer:
 
         task_results: List[Dict[str, Any]] = []
         # Incase there are no task_inputs we attempt reference free execution
-        if not task_inputs:
+        if not task_inputs and level_index == 0:
             logger.debug("No task inputs, attempting reference free execution")
             task_results: List[Dict[str, Any]] = task_instance.reference_free_execution()
         # Incase there are task_inputs we attempt reference based execution
@@ -139,6 +137,13 @@ class Composer:
             column_data=task_results,
         )
 
+    # Add support for local exports
+    # json
+    # csv
+    # parquet
+    # pickle
+    # orc
+    # html
     def export(
         self,
     ) -> DatasetDict:
@@ -212,12 +217,11 @@ class Composer:
         logger.debug("Checking if all column names are valid")
         invalid_column_names = set(columns) - set(self.dataframe.columns)
         if invalid_column_names:
-            raise InvalidKeyColumnError(
-                extra_info={
-                    "invalid_column_names": list(invalid_column_names),
-                    "valid_column_names": list(self.dataframe.columns),
-                }
-            )
+            # TODO: attempt to find the closest matching column names
+            logger.error(Messages.INVALID_KEY_COLUMN)
+            logger.error(f"Invalid column names: {invalid_column_names}")
+            logger.error(f"Valid column names: {self.dataframe.columns}")
+            raise ValueError(Messages.INVALID_KEY_COLUMN)
 
         # Export only the specified columns
         logger.debug("Exporting only the specified columns")
@@ -230,7 +234,7 @@ class Composer:
         # Check if all rows were excluded due to NaN values
         logger.debug("Checking if all rows were excluded due to NaN values")
         if not result:
-            warnings.warn(AllRowsExcludedDueToNanWarning())
+            logger.warning(Messages.ALL_ROWS_EXCLUDED_DUE_TO_NAN)
 
         logger.debug(f"Imported {len(result)} rows")
         return result

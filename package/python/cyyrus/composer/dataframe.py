@@ -1,16 +1,9 @@
-import warnings
 from typing import List, Tuple
 
 import pandas as pd
 from datasets import Dataset
 
-from cyyrus.errors.composer import (
-    DatasetTooSmallForSplitWarning,
-    NonUniqueColumnValuesWarning,
-    ReAdjustingSplitWarning,
-    RequiredColumnMissingWarning,
-)
-from cyyrus.errors.dataset import SplitsDontAddUpWarning
+from cyyrus.constants.messages import Messages
 from cyyrus.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -39,13 +32,8 @@ class DataFrameUtils:
         """
         missing_columns = set(required_columns) - set(df.columns)
         if missing_columns:
-            warnings.warn(
-                RequiredColumnMissingWarning(
-                    extra_info={
-                        "missing_columns": list(missing_columns),
-                    }
-                )
-            )
+            logger.warning(Messages.REQUIRED_COLUMN_MISSING)
+            logger.warning(f"Missing columns: {missing_columns}")
             for col in missing_columns:
                 df[col] = pd.Series(dtype=object)
         return df
@@ -64,14 +52,8 @@ class DataFrameUtils:
             df = df.drop_duplicates(subset=unique_columns, keep="first")
             removed_count = initial_count - len(df)
             if removed_count > 0:
-                warnings.warn(
-                    NonUniqueColumnValuesWarning(
-                        extra_info={
-                            "unique_columns": unique_columns,
-                            "removed_count": removed_count,
-                        }
-                    )
-                )
+                logger.warning(Messages.NON_UNIQUE_COLUMN_VALUES)
+                logger.warning(f"Unique columns: {unique_columns}, Removed count: {removed_count}")
         return df
 
 
@@ -87,51 +69,22 @@ class DatasetUtils:
         logger.debug(f"Validating splits: train: {train_size}, test: {test_size}")
         total = train_size + test_size
         if total <= 0:
-            warnings.warn(
-                SplitsDontAddUpWarning(
-                    extra_info={
-                        "new train split": 1,
-                        "new test split": 0,
-                        "old train split": train_size,
-                        "old test split": test_size,
-                    }
-                )
-            )
+            logger.debug(f"Old train split: {train_size}, Old test split: {test_size}")
+            logger.debug("New train split: 1, New test split: 0")
             return 1.0, 0.0
         if train_size < 0:
-            warnings.warn(
-                SplitsDontAddUpWarning(
-                    extra_info={
-                        "new train split": 0,
-                        "new test split": 0,
-                        "old train split": train_size,
-                        "old test split": test_size,
-                    }
-                )
-            )
+            logger.debug(f"Old train split: {train_size}, Old test split: {test_size}")
+            logger.debug("New train split: 0")
             train_size = 0
         if test_size < 0:
-            warnings.warn(
-                SplitsDontAddUpWarning(
-                    extra_info={
-                        "new train split": 0,
-                        "new test split": 0,
-                        "old train split": train_size,
-                        "old test split": test_size,
-                    }
-                )
-            )
+            logger.debug(f"Old train split: {train_size}, Old test split: {test_size}")
+            logger.debug("New test split: 0")
             test_size = 0
         if abs(total - 1) > 1e-6:
-            warnings.warn(
-                SplitsDontAddUpWarning(
-                    extra_info={
-                        "new train split": train_size / total,
-                        "new test split": test_size / total,
-                        "old train split": train_size,
-                        "old test split": test_size,
-                    }
-                )
+            logger.warning(Messages.SPLITS_DONT_ADD_UP)
+            logger.debug(f"Old train split: {train_size}, Old test split: {test_size}")
+            logger.debug(
+                f"New train split: {train_size / total}, New test split: {test_size / total}"
             )
             logger.debug(f"Normalizing splits: train: {train_size}, test: {test_size}")
             return train_size / total, test_size / total
@@ -161,28 +114,17 @@ class DatasetUtils:
         # Ensure at least one sample in each split
         min_samples = 1
         if total_size < 2 * min_samples:
-            warnings.warn(
-                DatasetTooSmallForSplitWarning(
-                    extra_info={
-                        "total_size": total_size,
-                        "min_samples": min_samples,
-                    }
-                )
-            )
+            logger.warning(Messages.DATASET_TOO_SMALL_FOR_SPLIT)
+            logger.warning(f"Total size: {total_size}, min samples: {min_samples}")
             return dataset, Dataset.from_dict({})
 
         train_samples = max(min_samples, int(total_size * train_size))
         test_samples = max(min_samples, total_size - train_samples)
 
         if train_samples + test_samples > total_size:
-            warnings.warn(
-                ReAdjustingSplitWarning(
-                    extra_info={
-                        "train_samples": train_samples,
-                        "test_samples": test_samples,
-                        "total_size": total_size,
-                    }
-                )
+            logger.warning(Messages.RE_ADJUSTING_SPLIT)
+            logger.warning(
+                f"Train samples: {train_samples}, Test samples: {test_samples}, Total size: {total_size}"
             )
             if train_samples > test_samples:
                 train_samples = total_size - min_samples

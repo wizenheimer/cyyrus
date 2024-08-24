@@ -1,0 +1,61 @@
+spec: v0 # Version of the schema
+
+# Define the properties of the dataset
+dataset:
+  # Define the metadata of the dataset
+  metadata:
+    name: Movie Review # Name of the dataset
+    description: Dataset for sentiment analysis # Description of the dataset
+    tags: [graphs, insights] # Tags of the dataset
+    license: CC-BY-NC-SA # License of the dataset
+    language: en # Language of the dataset
+
+  # Define how to shuffle the dataset
+  shuffle:
+    seed: 42
+
+  # Define the splits of the dataset
+  splits:
+    train: 0.9 # The sum of all splits should be 1, if not specified the remaining data will be used for training. Could be named train, training
+    test: 0.9 # The sum of all splits should be 1, if not specified the remaining data will be used for training. Could be named test, testing, eval, evaluation
+    seed: 42 # Seed for the split
+
+  # Define the attributes of the dataset
+  attributes:
+    required_columns: [product_review, sentiment] # List of required columns. If any of these columns are missing, the dataset will not be generated
+    unique_columns: [] # If there are any unique columns, specify them here. Non unique columns will be removed from the dataset
+    nulls: include # Whether or not to include null values in the dataset, include, exclude, special_token
+
+types:
+  movie_review:
+    type: string
+
+  sentiment:
+    type: float
+# Define the tasks that will be used in Dataset generation, and their properties
+tasks:
+  product_review:
+    task_type: generation
+    task_properties:
+      model: gpt-4o-mini
+      prompt: Generate a one liner product review. Could be positive or negative.
+      api_key: $OPENAI_API_KEY
+      max_epochs: 2
+
+  sentiment_analysis:
+    task_type: generation
+    task_properties:
+      model: gpt-4o-mini
+      prompt: What is the sentiment of the review? Positive or Negative?
+      api_key: $OPENAI_API_KEY
+      response_format: sentiment
+      flatten: true
+
+# Define the columns that will be used in the dataset
+columns:
+  product_review:
+    task_id: product_review
+
+  sentiment:
+    task_id: sentiment_analysis
+    task_input: [product_review]

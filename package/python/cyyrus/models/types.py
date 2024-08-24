@@ -1,3 +1,4 @@
+import re
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
@@ -8,7 +9,7 @@ from pydantic import (
 from pydantic.fields import Field
 from pydantic.functional_validators import model_validator
 
-from cyyrus.errors.types import MaximumDepthExceededError
+from cyyrus.constants.messages import Messages
 from cyyrus.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -110,6 +111,18 @@ class TypeMappingUtils:
     """
 
     @staticmethod
+    def sanitize_name(name: str) -> str:
+        """
+        Sanitize the given name to ensure it only contains valid characters.
+        """
+        # Replace any non-alphanumeric characters with underscores
+        sanitized = re.sub(r"[^a-zA-Z0-9]", "_", name)
+        # Ensure the name starts with a letter
+        if not sanitized[0].isalpha():
+            sanitized = "Model_" + sanitized
+        return sanitized
+
+    @staticmethod
     def get_python_type(
         type_string: str,
     ) -> type:
@@ -145,12 +158,9 @@ class TypeMappingUtils:
 
         # Check if the depth exceeds the maximum depth
         if depth >= max_depth:
-            logger.debug(f"Maximum depth exceeded: {depth}")
-            raise MaximumDepthExceededError(
-                extra_info={
-                    "max_depth": str(max_depth),
-                },
-            )
+            logger.error(f"{Messages.MAXIMUM_DEPTH_EXCEEDED}")
+            logger.debug(f"Max depth: {max_depth}, Current depth: {depth}")
+            raise ValueError(Messages.MAXIMUM_DEPTH_EXCEEDED)
 
         # Get the type value from the type definition
         type_value = type_def["type"]
@@ -160,6 +170,8 @@ class TypeMappingUtils:
         # Recursively create models for nested types
         if type_value == "object":
             logger.debug("Creating model for object type")
+            model_name = TypeMappingUtils.sanitize_name(f"ObjectModel_{depth}")
+
             fields = {}
 
             # Iterate over the properties and create models for each property
@@ -185,19 +197,21 @@ class TypeMappingUtils:
                         ...,
                     )
             return create_model(
-                f"DynamicModel_{depth}",
+                model_name,
                 **fields,
             )
         # If the type is an array, create a model for the items
         elif type_value == "array":
             logger.debug("Creating model for array type")
+            model_name = TypeMappingUtils.sanitize_name(f"ArrayModel_{depth}")
+
             item_type = TypeMappingUtils.get_concrete_model(
                 type_def["items"],
                 depth + 1,
                 max_depth,
             )
             return create_model(
-                f"ArrayModel_{depth}",
+                model_name,
                 items=(
                     List[item_type],
                     ...,
@@ -206,10 +220,12 @@ class TypeMappingUtils:
         # If the type is a primitive type, return the corresponding python type
         else:
             logger.debug("Creating model for primitive type")
+            model_name = TypeMappingUtils.sanitize_name(f"{type_value.capitalize()}Model_{depth}")
+
             python_type = TypeMappingUtils.get_python_type(
                 type_value,
             )
             return create_model(
-                f"PrimitiveModel_{type_def['type']}_{depth}",
+                model_name,
                 value=(python_type, ...),
             )
