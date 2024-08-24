@@ -6,6 +6,7 @@ from typing import Dict, Optional
 
 import colorlog
 from pythonjsonlogger import jsonlogger
+from tqdm import tqdm
 
 # Default silenced loggers
 DEFAULT_SILENCED_LOGGERS = {
@@ -17,6 +18,19 @@ DEFAULT_SILENCED_LOGGERS = {
     "botocore": logging.WARNING,
     "nose": logging.WARNING,
 }
+
+
+class TqdmLoggingHandler(logging.Handler):
+    def __init__(self, level=logging.NOTSET):
+        super().__init__(level)
+
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            tqdm.write(msg)
+            self.flush()
+        except Exception:
+            self.handleError(record)
 
 
 def setup_logging(
@@ -63,8 +77,8 @@ def setup_logging(
             "%(asctime)s %(name)s %(levelname)s %(message)s %(pathname)s %(lineno)d",
         )
 
-    # Console handler
-    console_handler = colorlog.StreamHandler()
+    # TQDM handler
+    console_handler = TqdmLoggingHandler()
     console_handler.setLevel(log_level)
     console_handler.setFormatter(console_formatter)
     root_logger.addHandler(console_handler)
