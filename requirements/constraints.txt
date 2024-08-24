@@ -166,6 +166,7 @@ tokenizers==0.20.0
     # via litellm
 tqdm==4.66.5
     # via
+    #   -r requirements/requirements.in
     #   datasets
     #   huggingface-hub
     #   openai

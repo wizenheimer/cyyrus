@@ -183,8 +183,8 @@ publish: test build
 	twine upload --repository testpypi $(DIST_DIR)/*
 
 ## experimental: Create an experimental session with the package
-.PHONY: experimental
-experimental:
+.PHONY: notebook
+notebook:
 	cd experimental && PYTHONPATH=$(realpath package/python) JUPYTER_PATH=$(realpath .) jupyter-notebook --NotebookApp.token='' --NotebookApp.password=''
 
 ## check: Run code quality checks (lint and format)

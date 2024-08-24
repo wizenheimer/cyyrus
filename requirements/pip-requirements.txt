@@ -1378,6 +1378,7 @@ tqdm==4.66.5 \
     --hash=sha256:90279a3770753eafc9194a0364852159802111925aa30eb3f9d85b0e805ac7cd \
     --hash=sha256:e1020aef2e5096702d8a025ac7d16b1577279c9d63f8375b63083e9a5f0fcbad
     # via
+    #   -r requirements/requirements.in
     #   datasets
     #   huggingface-hub
     #   openai
