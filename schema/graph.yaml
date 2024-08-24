@@ -16,8 +16,8 @@ dataset:
 
   # Define the splits of the dataset
   splits:
-    train: 0.8 # The sum of all splits should be 1, if not specified the remaining data will be used for training. Could be named train, training
-    test: 0.2 # The sum of all splits should be 1, if not specified the remaining data will be used for training. Could be named test, testing, eval, evaluation
+    train: 0.9 # The sum of all splits should be 1, if not specified the remaining data will be used for training. Could be named train, training
+    test: 0.9 # The sum of all splits should be 1, if not specified the remaining data will be used for training. Could be named test, testing, eval, evaluation
     seed: 42 # Seed for the split
 
   # Define the attributes of the dataset
@@ -31,7 +31,7 @@ tasks:
   parse_images:
     task_type: parsing
     task_properties:
-      directory: images # Directory where the files are stored, relative to current path
+      directory: experimental/images # Directory where the files are stored, relative to current path
       file_type: jpg
       max_depth: 5
       parsed_format: base64 # image, base64, or text

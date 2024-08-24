@@ -16,6 +16,7 @@ from cyyrus.composer.dataframe import (
     DataFrameUtils,
     DatasetUtils,
 )
+from cyyrus.composer.progress import conditional_tqdm
 from cyyrus.errors.composer import (
     AllRowsExcludedDueToNanWarning,
     InvalidKeyColumnError,
@@ -24,16 +25,26 @@ from cyyrus.models.spec import Spec
 from cyyrus.models.task import TaskType
 from cyyrus.tasks.base import BaseTask
 from cyyrus.tasks.default import DefaultTask
+from cyyrus.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class Composer:
     def __init__(self, spec: Spec) -> None:
+        logger.debug("Initializing Composer with Spec")
         self.spec: Spec = spec
         self.dataframe: pd.DataFrame = pd.DataFrame()
+
+        logger.debug("Infering task artifacts")
         self.task_artifacts = self._infer_tasks()
+
+        logger.debug(f"Discovered {len(self.task_artifacts)} total possible tasks")
+        logger.debug("Composer initialized")
 
     def _infer_tasks(self) -> Dict[TaskType, Type[BaseTask]]:
         try:
+            logger.debug("Importing tasks module")
             module = importlib.import_module("cyyrus.tasks")
         except ImportError as _:
             raise
@@ -42,7 +53,10 @@ class Composer:
 
             for _, cls in inspect.getmembers(module, inspect.isclass):
                 if hasattr(cls, "TASK_ID") and (issubclass(cls, BaseTask)) and cls != BaseTask:
+                    logger.debug(f"Registering task: {cls.TASK_ID} to task artifacts")
                     task_dict[cls.TASK_ID] = cls
+                else:
+                    logger.debug(f"Skipping class: {cls} from task artifacts")
 
             return task_dict
 
@@ -50,15 +64,25 @@ class Composer:
         self,
         dry_run: bool = False,
     ):
+        logger.debug("Iterating over levels in the spec")
         # Iterate over each level in the spec
-        for level_index, level in enumerate(self.spec.levels()):
+        for level_index, level in conditional_tqdm(
+            enumerate(self.spec.levels()),
+            use_tqdm=not dry_run,
+        ):
+            logger.debug(f"Processing level: {level_index}")
             # Merge tasks in the level
-            for input_columns, output_column, task_type, task_properties in level:
+            for input_columns, output_column, task_type, task_properties in conditional_tqdm(
+                level,
+                use_tqdm=not dry_run,
+            ):
+                logger.debug(f"Processing task: {task_type}")
 
                 if dry_run:
-                    print(
-                        f"Level_Index: {level_index}, Task: {task_type}, Inputs: {input_columns}, Properties: {task_properties}, Output: {output_column}\n"
-                    )
+                    logger.info("Dry run enabled, skipping execution")
+                    logger.info(f"Task: {task_type}")
+                    logger.info(f"Inputs: {input_columns}")
+                    logger.info(f"Output: {output_column}")
                     continue
 
                 self.execute(
@@ -76,27 +100,38 @@ class Composer:
         task_properties: Dict[str, Any],
         dry_run: bool = False,
     ):
+        logger.info(f"Executing task: {task_type}")
+        logger.debug(f"Inputs: {input_columns}")
+        logger.debug(f"Output: {output_column}")
+
         task_entity = self.task_artifacts.get(task_type, DefaultTask)
         task_instance = task_entity(
             column_name=output_column,
             task_properties=task_properties,
         )
 
-        task_inputs = self._import_columns(columns=input_columns)
-
         if dry_run:
-            print(
-                f"Task: {task_type}, Inputs: {task_inputs}, Properties: {task_properties}, Output: {output_column}\n"
-            )
+            logger.info("Dry run enabled, skipping execution")
+            logger.info(f"Task: {task_type}")
+            logger.info(f"Input Columns: {input_columns[:2]}...")
+            logger.info(f"Output Columns: {output_column}")
             return
+
+        task_inputs = self._import_columns(columns=input_columns)
 
         task_results: List[Dict[str, Any]] = []
         # Incase there are no task_inputs we attempt reference free execution
         if not task_inputs:
+            logger.debug("No task inputs, attempting reference free execution")
             task_results: List[Dict[str, Any]] = task_instance.reference_free_execution()
         # Incase there are task_inputs we attempt reference based execution
         else:
-            for task_input in task_inputs:
+            logger.debug("Task inputs found, attempting reference based execution")
+            logger.debug(f"Total Task inputs: {len(task_inputs)}")
+            for task_input in conditional_tqdm(
+                task_inputs,
+                use_tqdm=not dry_run,
+            ):
                 task_output = task_instance.reference_based_execution(task_input)
                 task_results.append({**task_input, **task_output})
 
@@ -107,22 +142,29 @@ class Composer:
     def export(
         self,
     ) -> DatasetDict:
+        logger.debug("Exporting dataframe to Hugging Face Dataset")
+
         # Handle nulls
+        logger.debug("Attempting to handle nulls")
         df = DataFrameUtils.handle_nulls(self.dataframe, self.spec.dataset.attributes.nulls)
 
         # Ensure required columns and unique columns
+        logger.debug("Ensuring required and unique columns")
         df = DataFrameUtils.ensure_required_columns(
             df, self.spec.dataset.attributes.required_columns
         )
         df = DataFrameUtils.ensure_unique_columns(df, self.spec.dataset.attributes.unique_columns)
 
         # Convert to Hugging Face Dataset
+        logger.debug("Converting dataframe to Hugging Face Dataset")
         dataset = Dataset.from_pandas(df)
 
         # Shuffle the dataset
+        logger.debug("Shuffling the dataset")
         dataset = dataset.shuffle(seed=self.spec.dataset.shuffle.seed)
 
         # Split the dataset
+        logger.debug("Splitting the dataset")
         train_set, test_set = DatasetUtils.split_dataset(
             dataset,
             self.spec.dataset.splits.train or 0.8,  # default to 0.8 if not specified
@@ -131,6 +173,7 @@ class Composer:
         )
 
         # Create DatasetDict
+        logger.debug("Creating DatasetDict with train and test splits")
         hf_dataset = DatasetDict(
             {
                 "train": train_set,
@@ -139,10 +182,12 @@ class Composer:
         )
 
         # Set dataset metadata
+        logger.debug("Setting dataset metadata")
         for split in hf_dataset.values():
             split.info.description = self.spec.dataset.metadata.description
             split.info.license = self.spec.dataset.metadata.license
 
+        logger.debug("Export complete")
         return hf_dataset
 
     def _import_columns(
@@ -156,11 +201,15 @@ class Composer:
         2. Exports only the specified column names if column_names is provided
         3. Returns the exported column names
         """
+        logger.debug(f"Importing columns {columns[:2] if columns else None} from the dataframe")
+
         # Check if the dataframe is empty or no columns are specified
         if self.dataframe.empty or not columns:
+            logger.debug("Dataframe is empty or no columns specified")
             return []
 
         # Check if all column names are valid
+        logger.debug("Checking if all column names are valid")
         invalid_column_names = set(columns) - set(self.dataframe.columns)
         if invalid_column_names:
             raise InvalidKeyColumnError(
@@ -171,6 +220,7 @@ class Composer:
             )
 
         # Export only the specified columns
+        logger.debug("Exporting only the specified columns")
         result = [
             {k: v for k, v in row.items() if k in columns}
             for row in self.dataframe[columns].to_dict("records")  # type: ignore
@@ -178,9 +228,11 @@ class Composer:
         ]
 
         # Check if all rows were excluded due to NaN values
+        logger.debug("Checking if all rows were excluded due to NaN values")
         if not result:
             warnings.warn(AllRowsExcludedDueToNanWarning())
 
+        logger.debug(f"Imported {len(result)} rows")
         return result
 
     def _refresh_dataframe(self, column_data: List[Dict[str, Any]]):
@@ -194,14 +246,19 @@ class Composer:
         If a column only exists in the old dataframe, we keep it as is.
         If a column only exists in the new dataframe, we add it.
         """
+        logger.debug("Refreshing dataframe with new column data")
+
         # Handle empty column data
+        logger.debug("Handling empty column data")
         if not column_data:
             return
 
         # Convert column data to a DataFrame
+        logger.debug("Converting column data to DataFrame")
         new_df = pd.DataFrame(column_data)
 
         # Explode list columns in new_df
+        logger.debug("Exploding list columns in new dataframe")
         for col in new_df.columns:
             if new_df[col].apply(lambda x: isinstance(x, list)).any():
                 new_df = new_df.explode(col)
@@ -210,20 +267,27 @@ class Composer:
         new_df = new_df.reset_index(drop=True)
 
         # If the existing dataframe is empty, just use the new data
+        logger.debug("Checking if the existing dataframe is empty")
+
         if self.dataframe.empty:
+            logger.debug("Existing dataframe is empty, swapping previous dataframe")
             self.dataframe = new_df
             return
 
         # Reset index of existing dataframe to ensure it's unique
+        logger.debug("Resetting index of existing dataframe")
         self.dataframe = self.dataframe.reset_index(drop=True)
 
         # Identify new columns
+        logger.debug("Identifying new columns")
         existing_columns = set(self.dataframe.columns)
 
         # Create a temporary dataframe with all columns
+        logger.debug("Creating a temporary dataframe with all columns")
         temp_df = pd.DataFrame(index=range(max(len(self.dataframe), len(new_df))))
 
         # Update existing columns and add new ones
+        logger.debug("Updating existing columns and adding new ones")
         for col in self.dataframe.columns.union(new_df.columns):
             if col in existing_columns and col in new_df.columns:
                 # Update existing column, preserving old values where new ones are NaN
@@ -236,4 +300,7 @@ class Composer:
                 temp_df[col] = new_df[col]
 
         # Update self.dataframe with the merged data
+        logger.debug("Updating self.dataframe with the merged data")
         self.dataframe = temp_df.dropna(how="all").reset_index(drop=True)
+
+        logger.debug("Dataframe refreshed")

@@ -58,6 +58,7 @@ cover/
 *.pot
 
 # Ignore log files
+logs/
 *.log
 
 # Ignore Django specific files

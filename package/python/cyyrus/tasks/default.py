@@ -2,6 +2,9 @@ from typing import Any, Dict, List
 
 from cyyrus.models.task_type import TaskType
 from cyyrus.tasks.base import BaseTask
+from cyyrus.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class DefaultTask(BaseTask):
@@ -19,7 +22,8 @@ class DefaultTask(BaseTask):
         """
         Perform the task execution
         """
-        return "########"
+        logger.debug(f"Executing default task with {self.TASK_ID} ...")
+        return None
 
     # Incase the task supports reference-free execution, the task should implement the _generate_references method as well
     def _generate_references(
@@ -28,4 +32,5 @@ class DefaultTask(BaseTask):
         """
         Attempt to generate the reference data for the task, using the task properties
         """
+        logger.debug(f"Generating references for task {self.TASK_ID} ...")
         return []

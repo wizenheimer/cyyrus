@@ -1,16 +1,42 @@
 import base64
 import inspect
+import io
 import json
 import string
+import sys
 from typing import Any, Dict, List
 
 import litellm
+from litellm import supports_vision  # type: ignore
 
 from cyyrus.models.options import LargeLanguageModels
 from cyyrus.models.task_type import TaskType
 from cyyrus.tasks.base import BaseTask
+from cyyrus.utils.errors import error_handler
+from cyyrus.utils.logging import get_logger
 
-# litellm.drop_params = True
+logger = get_logger(__name__)
+
+catch_all = error_handler(
+    exceptions=Exception,  # This will catch all exceptions
+    handler=None,
+    logger=logger,
+    retries=1,
+    default_return=None,
+)
+
+
+# TODO: add support for debug flags
+class SuppressOutput:
+    def __enter__(self):
+        self._stdout = sys.stdout
+        self._stderr = sys.stderr
+        sys.stdout = io.StringIO()
+        sys.stderr = io.StringIO()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stdout = self._stdout
+        sys.stderr = self._stderr
 
 
 class GenerationTask(BaseTask):
@@ -35,6 +61,7 @@ class GenerationTask(BaseTask):
         """
         Perform the generation task.
         """
+        logger.debug(f"Executing generation task with {self.TASK_ID} ...")
 
         return ModelUtils.generation(
             task_input=task_input,
@@ -51,7 +78,9 @@ class GenerationTask(BaseTask):
             key="max_epochs",
             default=GenerationTask.MAX_EPOCH,
         )
+
         # Attempt to generate the reference data
+        logger.debug(f"Generating references for task {self.TASK_ID} with {max_epochs} epochs ...")
         return [{} for _ in range(max_epochs)]
 
 
@@ -69,6 +98,7 @@ class ModelUtils:
         template: str | List[str],
         **kwargs: Any,
     ) -> str:
+        logger.debug("Attempting to format response with template")
         if isinstance(template, list):
             # If template is a list, join it into a single string
             template = " ".join(template)
@@ -87,6 +117,7 @@ class ModelUtils:
         return DefaultFormatter().format(template, **kwargs)
 
     @staticmethod
+    @catch_all
     def generation(
         task_property: Dict[str, Any],
         task_input: Dict[str, Any],
@@ -94,6 +125,7 @@ class ModelUtils:
         """
         Process the model.
         """
+        logger.debug("Processing generation task ...")
         # Converts the prompt into a formatted string of messages
         prompt = task_property.pop("prompt", "")
         formatted_prompt = ModelUtils.safe_format(
@@ -113,7 +145,7 @@ class ModelUtils:
         )
 
         img_key = ModelUtils.find_multimodal_key(task_input)
-        if img_key and litellm.supports_vision(model=model):
+        if img_key and supports_vision(model=model):
             base64_image = task_input.get(img_key)
             image_arg = {
                 "type": "image_url",
@@ -140,7 +172,9 @@ class ModelUtils:
         valid_args = ModelUtils.get_valid_completion_args()
         filtered_task_property = {k: v for k, v in task_property.items() if k in valid_args}
 
-        response = litellm.completion(**filtered_task_property)
+        with SuppressOutput():
+            response = litellm.completion(**filtered_task_property)
+
         result = response.choices[0].message.content  # type: ignore
 
         if "response_format" in task_property.keys():
@@ -163,6 +197,7 @@ class ModelUtils:
         Returns:
         Union[str, dict]: The converted dictionary or the original string.
         """
+        logger.debug("Attempting to convert string to dictionary ...")
         if isinstance(input_data, dict):
             return input_data
 
@@ -178,6 +213,7 @@ class ModelUtils:
     def find_multimodal_key(
         task_input: Dict[str, Any],
     ):
+        logger.debug("Attempting to find multimodal key in task input ...")
         for key, value in task_input.items():
             if isinstance(value, str) and ModelUtils.is_base64_image(value):
                 return key
@@ -188,6 +224,7 @@ class ModelUtils:
         """
         Check if a string is a base64 encoded image.
         """
+        logger.debug("Checking if string is a base64 encoded image ...")
         try:
             # Attempt to decode the string
             decoded = base64.b64decode(

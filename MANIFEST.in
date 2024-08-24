@@ -1,6 +1,16 @@
 include LICENSE
-include Makefile
-include commitlint.config.js
+include README.md
 include pyproject.toml
-include requirements/requirements.in
-recursive-include package/python *
+include requirements/*.txt
+include requirements/*.in
+
+recursive-include package/python/cyyrus *.py
+recursive-include package/python/cyyrus *.yaml
+recursive-include package/python/cyyrus *.json
+
+global-exclude *.pyc
+global-exclude __pycache__
+global-exclude *.DS_Store
+global-exclude .DS_Store
+global-exclude *.egg-info
+global-exclude .egg-info

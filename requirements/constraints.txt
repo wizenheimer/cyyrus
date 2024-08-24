@@ -35,6 +35,8 @@ click==8.1.7
     # via
     #   -r requirements/requirements.in
     #   litellm
+colorlog==6.8.2
+    # via -r requirements/requirements.in
 datasets==2.21.0
     # via -r requirements/requirements.in
 dill==0.3.8
@@ -65,7 +67,7 @@ huggingface-hub==0.24.6
     # via
     #   datasets
     #   tokenizers
-idna==3.7
+idna==3.8
     # via
     #   anyio
     #   httpx
@@ -127,6 +129,8 @@ python-dotenv==1.0.1
     # via
     #   -r requirements/requirements.in
     #   litellm
+python-json-logger==2.0.7
+    # via -r requirements/requirements.in
 pytz==2024.1
     # via pandas
 pyyaml==6.0.2
@@ -162,6 +166,7 @@ tokenizers==0.20.0
     # via litellm
 tqdm==4.66.5
     # via
+    #   -r requirements/requirements.in
     #   datasets
     #   huggingface-hub
     #   openai

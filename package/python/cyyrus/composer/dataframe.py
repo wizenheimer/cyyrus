@@ -11,6 +11,9 @@ from cyyrus.errors.composer import (
     RequiredColumnMissingWarning,
 )
 from cyyrus.errors.dataset import SplitsDontAddUpWarning
+from cyyrus.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class DataFrameUtils:
@@ -81,6 +84,7 @@ class DatasetUtils:
         """
         Normalize the split sizes to ensure they add up to 1.
         """
+        logger.debug(f"Validating splits: train: {train_size}, test: {test_size}")
         total = train_size + test_size
         if total <= 0:
             warnings.warn(
@@ -129,7 +133,10 @@ class DatasetUtils:
                     }
                 )
             )
+            logger.debug(f"Normalizing splits: train: {train_size}, test: {test_size}")
             return train_size / total, test_size / total
+
+        logger.debug(f"Final splits: train: {train_size}, test: {test_size}")
         return train_size, test_size
 
     @staticmethod
@@ -142,6 +149,7 @@ class DatasetUtils:
         """
         Splits the dataset into train and test sets.
         """
+        logger.debug(f"Splitting dataset with sizes: train: {train_size}, test: {test_size}")
         total_size = len(dataset)
 
         # Normalize split sizes
@@ -184,6 +192,7 @@ class DatasetUtils:
                 train_samples = min_samples
 
         # Perform the split
+        logger.debug(f"Performing dataset split {train_samples} train, {test_samples} test")
         split = dataset.train_test_split(
             train_size=train_samples, test_size=test_samples, seed=seed
         )

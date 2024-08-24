@@ -230,6 +230,10 @@ click==8.1.7 \
     # via
     #   -r requirements/requirements.in
     #   litellm
+colorlog==6.8.2 \
+    --hash=sha256:3e3e079a41feb5a1b64f978b5ea4f46040a94f11f0e8bbb8261e3dbbeca64d44 \
+    --hash=sha256:4dcbb62368e2800cb3c5abd348da7e53f6c362dda502ec27c560b2e58a66bd33
+    # via -r requirements/requirements.in
 datasets==2.21.0 \
     --hash=sha256:25e4e097110ce28824b746a107727ada94024cba11db8bc588d468414692b65a \
     --hash=sha256:998f85a8460f1bd982e5bd058f8a0808eef424249e3df1e8cdd594ccd0dc8ba2
@@ -952,6 +956,10 @@ python-dotenv==1.0.1 \
     # via
     #   -r requirements/requirements.in
     #   litellm
+python-json-logger==2.0.7 \
+    --hash=sha256:23e7ec02d34237c5aa1e29a070193a4ea87583bb4e7f8fd06d3de8264c4b2e1c \
+    --hash=sha256:f380b826a991ebbe3de4d897aeec42760035ac760345e57b812938dc8b35e2bd
+    # via -r requirements/requirements.in
 pytz==2024.1 \
     --hash=sha256:2a29735ea9c18baf14b448846bde5a48030ed267578472d8955cd0e7443a9812 \
     --hash=sha256:328171f4e3623139da4983451950b28e95ac706e13f3f2630a879749e7a8b319
@@ -1370,6 +1378,7 @@ tqdm==4.66.5 \
     --hash=sha256:90279a3770753eafc9194a0364852159802111925aa30eb3f9d85b0e805ac7cd \
     --hash=sha256:e1020aef2e5096702d8a025ac7d16b1577279c9d63f8375b63083e9a5f0fcbad
     # via
+    #   -r requirements/requirements.in
     #   datasets
     #   huggingface-hub
     #   openai

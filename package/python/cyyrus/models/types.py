@@ -9,6 +9,9 @@ from pydantic.fields import Field
 from pydantic.functional_validators import model_validator
 
 from cyyrus.errors.types import MaximumDepthExceededError
+from cyyrus.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class DataType(str, Enum):
@@ -43,12 +46,14 @@ class ArrayItems(BaseModel):
 
     @model_validator(mode="after")
     def validate_properties(cls, values):
+        logger.debug(f"Validating properties for {cls}")
         if values.properties:
             for key, value in values.properties.items():
                 if isinstance(value, str):
                     values.properties[key] = ObjectProperty(
                         type=DataType(value),
                     )
+        logger.debug(f"Properties after validation: {values.properties}")
         return values
 
 
@@ -68,16 +73,20 @@ class CustomType(BaseModel):
 
     @model_validator(mode="after")
     def validate_properties(cls, values):
+        logger.debug(f"Validating properties for {cls}")
         if values.properties:
             for key, value in values.properties.items():
                 if isinstance(value, str):
                     values.properties[key] = ObjectProperty(type=value)  # type: ignore
+        logger.debug(f"Properties after validation: {values.properties}")
         return values
 
     @model_validator(mode="after")
     def validate_items(cls, values):
+        logger.debug(f"Validating items for {cls}")
         if values.items and isinstance(values.items, dict):
             values.items = ArrayItems(**values.items)
+        logger.debug(f"Items after validation: {values.items}")
         return values
 
 
@@ -131,10 +140,12 @@ class TypeMappingUtils:
         """
 
         if type_def is None:
+            logger.debug("Type definition is None, using default model")
             return DefaultModel
 
         # Check if the depth exceeds the maximum depth
         if depth >= max_depth:
+            logger.debug(f"Maximum depth exceeded: {depth}")
             raise MaximumDepthExceededError(
                 extra_info={
                     "max_depth": str(max_depth),
@@ -144,8 +155,11 @@ class TypeMappingUtils:
         # Get the type value from the type definition
         type_value = type_def["type"]
 
+        logger.debug(f"Creating model for type value: {type_value}")
+
         # Recursively create models for nested types
         if type_value == "object":
+            logger.debug("Creating model for object type")
             fields = {}
 
             # Iterate over the properties and create models for each property
@@ -176,6 +190,7 @@ class TypeMappingUtils:
             )
         # If the type is an array, create a model for the items
         elif type_value == "array":
+            logger.debug("Creating model for array type")
             item_type = TypeMappingUtils.get_concrete_model(
                 type_def["items"],
                 depth + 1,
@@ -190,6 +205,7 @@ class TypeMappingUtils:
             )
         # If the type is a primitive type, return the corresponding python type
         else:
+            logger.debug("Creating model for primitive type")
             python_type = TypeMappingUtils.get_python_type(
                 type_value,
             )
