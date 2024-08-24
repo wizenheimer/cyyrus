@@ -4,6 +4,11 @@ from pathlib import Path
 
 import click
 
+from cyyrus.cli.utils import get_ascii_art
+from cyyrus.composer.core import Composer
+from cyyrus.models.spec import load_spec
+from cyyrus.utils.logging import get_logger, setup_logging
+
 
 @click.group()
 def cli():
@@ -42,14 +47,25 @@ def cli():
     default=None,
     help="Directory to store log files",
 )
+@click.option(
+    "--schema-path",
+    type=click.Path(exists=True),
+    required=True,
+    help="Path to the schema file",
+)
+@click.option(
+    "--env-path",
+    type=click.Path(exists=True),
+    help="Path to the optional environment file",
+)
 def run(
     log_level,
     human_readable,
     log_file,
     log_dir,
+    schema_path,
+    env_path,
 ):
-    from package.python.cyyrus.utils.logging import get_logger, setup_logging
-
     if log_dir:
         log_file = Path(log_dir) / log_file
 
@@ -59,7 +75,72 @@ def run(
         for_human=human_readable,
     )
     logger = get_logger(__name__)
-    logger.info("CLI started")
+    print(get_ascii_art())
+    logger.info("CLI started. Buckle up, it's going to be a wild wild ride!")
+
+    # Load the spec
+    spec = load_spec(schema_path, env_path)
+    logger.info("Spec loaded. Ready to roll!")
+
+    # Initialize the Composer
+    composer = Composer(spec=spec)
+
+    # Ask if they want to perform a dry run
+    if click.confirm("Do you want to perform a dry run?", default=True):
+        composer.compose(dry_run=True)
+        logger.info("Dry run complete. Nothing exploded, good start!")
+    else:
+        logger.info("Skipping dry run. Brave choice")
+
+    # Ask if they want to perform a full run
+    if click.confirm("Do you want to perform a full run?", default=True):
+        composer.compose()
+        logger.info("Full run executed. Hope you liked it!")
+    else:
+        logger.info("Skipping full run. Until next time!")
+        return
+
+    # Display sample dataframe
+
+    df = composer.dataframe
+    click.echo("Sample dataframe:")
+    click.echo(df.head())
+    logger.info("Here's a sneak peek of your data. Doesn't it look fabulous?")
+
+    # Ask if they want to export the dataset
+    if click.confirm("Do you want to export the dataset?"):
+        export_path = click.prompt(
+            "Enter the export path",
+            type=click.Path(path_type=Path),
+        )
+        export_format = click.prompt(
+            "Enter the export format",
+            type=click.Choice(["json", "parquet", "csv"]),
+            default="json",
+        )
+        composer.export()
+        logger.info(
+            f"Exported dataset to {export_path}.{export_format}. It's now officially your data!"
+        )
+    else:
+        logger.info("Skipping export. That's cool too! Adieu!")
+        return
+
+    # Ask if they want to publish the exported dataset
+    if click.confirm("Do you want to publish the dataset?"):
+        _ = click.prompt(
+            "Enter the huggingface token",
+            type=str,
+        )
+        dataset_identifier = click.prompt(
+            "Enter the dataset identifier",
+            type=str,
+        )
+        composer.export()
+        logger.info(f"Published dataset to {dataset_identifier}. Happy sharing!")
+    else:
+        logger.info("Publishing skipped. Your data, your rules!")
+        return
 
 
 if __name__ == "__main__":
