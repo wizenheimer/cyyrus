@@ -3,6 +3,9 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
 from cyyrus.models.task_type import TaskType
+from cyyrus.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class BaseTask(ABC):
@@ -29,9 +32,11 @@ class BaseTask(ABC):
 
         Strategy: Incase the task is reference-based, the task_input will be a dictionary containing the reference data. The final output will be a dictionary.
         """
+        logger.debug(f"Executing reference based generation for task {self.TASK_ID} ...")
         interim_result = self.execute(
             task_input,
         )
+
         if self._trigger_flattening():
             return self._flatten_dict(
                 d=interim_result,
@@ -50,7 +55,10 @@ class BaseTask(ABC):
 
         Strategy: Incase the task is reference-free, the task_input will be None and the task will attempt to generate the reference data. The final output will be a list of dictionaries.
         """
+        logger.debug(f"Executing reference free generation for task {self.TASK_ID} ...")
+
         if not self.SUPPORTS_REFERENCE_FREE_EXECUTION:
+            logger.error(f"Skipping, Task {self.TASK_ID} does not support reference-free execution")
             return []
 
         task_inputs = self._generate_references()
@@ -68,6 +76,7 @@ class BaseTask(ABC):
         """
         Perform the task execution
         """
+        logger.debug(f"Executing task {self.TASK_ID} ...")
         return None
 
     # Incase the task supports reference-free execution, the task should implement the _generate_references method as well
@@ -92,6 +101,7 @@ class BaseTask(ABC):
         """
         Attempts to flatten the dictionary to a single level, by concatenating the keys with the separator. Upto the specified max_depth.
         """
+        logger.debug(f"Attempting to flatten output with max_depth {max_depth} ...")
         items = []
         for k, v in d.items():
             new_key = f"{parent_key}{sep}{k}" if parent_key else k
@@ -109,16 +119,19 @@ class BaseTask(ABC):
         """
         The key used to extract the path from the task properties, incase the key is not found, the task will try to find the closest matching key
         """
+        logger.debug(f"Fetching task property {key} ...")
         if key in list(self.task_properties.keys()):
             property_value = self.task_properties.get(
                 key,
                 default,
             )
         else:
+            logger.debug("Key not found, attempting to find closest match ...")
             closest_key = self._find_closest_key(
                 list(self.task_properties.keys()),
                 key,
             )
+            logger.debug(f"Closest key found: {closest_key}")
             property_value = self.task_properties.get(
                 closest_key,
                 default,
@@ -134,16 +147,20 @@ class BaseTask(ABC):
         """
         The key used to extract the path from the task input, incase the key is not found, the task will try to find the closest matching key
         """
+        logger.debug(f"Fetching task input {key} ...")
         if key in list(task_input.keys()):
             property_value = task_input.get(
                 key,
                 default,
             )
         else:
+            logger.debug("Key not found, attempting to find closest match ...")
             closest_key = self._find_closest_key(
                 list(task_input.keys()),
                 key,
             )
+
+            logger.debug(f"Closest key found: {closest_key}")
             property_value = task_input.get(
                 closest_key,
                 default,
