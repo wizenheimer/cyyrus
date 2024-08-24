@@ -1,8 +1,10 @@
 # package/python/cli/main.py
 import logging
+import os
 from pathlib import Path
 
 import click
+import litellm
 
 from cyyrus.cli.utils import get_ascii_art
 from cyyrus.composer.core import Composer
@@ -66,17 +68,27 @@ def run(
     schema_path,
     env_path,
 ):
-    if log_dir:
-        log_file = Path(log_dir) / log_file
-
     setup_logging(
         log_level=getattr(logging, log_level.upper()),
         log_file=str(log_file),
         for_human=human_readable,
     )
     logger = get_logger(__name__)
+
+    # Start the CLI
     print(get_ascii_art())
     logger.info("CLI started. Buckle up, it's going to be a wild wild ride!")
+
+    if log_dir:
+        logger.debug(f"Log directory: {log_dir}")
+        log_file = Path(log_dir) / log_file
+
+    logger.debug(f"liteLLM logging level set to {log_level}")
+    os.environ["LITELLM_LOG"] = log_level
+
+    litellm_verbosity = False  # log_level == "DEBUG"
+    litellm.set_verbose = litellm_verbosity
+    logger.debug(f"liteLLM verbose mode set to {litellm_verbosity}")
 
     # Load the spec
     spec = load_spec(schema_path, env_path)
