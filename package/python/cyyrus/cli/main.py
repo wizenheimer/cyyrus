@@ -6,8 +6,10 @@ from pathlib import Path
 import click
 import litellm
 
-from cyyrus.cli.utils import get_ascii_art
+from cyyrus.cli.utils import create_export_filepath, get_ascii_art
 from cyyrus.composer.core import Composer
+from cyyrus.composer.dataframe import ExportFormat
+from cyyrus.composer.utils import FunnyBones
 from cyyrus.models.spec import load_spec
 from cyyrus.utils.logging import get_logger, setup_logging
 
@@ -60,6 +62,18 @@ def cli():
     type=click.Path(exists=True),
     help="Path to the optional environment file",
 )
+@click.option(
+    "--export-format",
+    type=click.Choice([format.value for format in ExportFormat]),
+    default=None,
+    help="Format to export the dataset",
+)
+@click.option(
+    "--export-path",
+    type=click.Path(path_type=Path),
+    default=None,
+    help="Directory to export the dataset",
+)
 def run(
     log_level,
     human_readable,
@@ -67,6 +81,8 @@ def run(
     log_dir,
     schema_path,
     env_path,
+    export_format,
+    export_path,
 ):
     setup_logging(
         log_level=getattr(logging, log_level.upper()),
@@ -118,25 +134,62 @@ def run(
     click.echo("Sample dataframe:")
     click.echo(df.head())
     logger.info("Here's a sneak peek of your data. Doesn't it look fabulous?")
-
+    # "This is embarassing. Do you want to try exporting again? Maybe with a different format or path?"
+    # Export skipped. Maybe next time!
     # Ask if they want to export the dataset
+    # Export handling
     if click.confirm("Do you want to export the dataset?"):
-        export_path = click.prompt(
-            "Enter the export path",
-            type=click.Path(path_type=Path),
-        )
-        export_format = click.prompt(
-            "Enter the export format",
-            type=click.Choice(["json", "parquet", "csv"]),
-            default="json",
-        )
-        composer.export()
-        logger.info(
-            f"Exported dataset to {export_path}.{export_format}. It's now officially your data!"
-        )
+        while True:
+            if export_path is None:
+                export_path = click.prompt(
+                    "Enter the export directory",
+                    type=click.Path(path_type=Path),
+                    default=Path.cwd(),
+                )
+
+            if export_format is None:
+                export_format = click.prompt(
+                    "Enter the export format",
+                    type=click.Choice([format.value for format in ExportFormat]),
+                    default=ExportFormat.HUGGINGFACE.value,
+                )
+
+            suggested_name = FunnyBones.suggest()
+            dataset_name = click.prompt(
+                f"Enter a name for your dataset (How about: {suggested_name} ?)",
+                default=suggested_name,
+            )
+
+            full_export_path = create_export_filepath(
+                Path(export_path),
+                dataset_name,
+                export_format,
+            )
+
+            if full_export_path.exists():
+                if not click.confirm(f"File {full_export_path} already exists. Overwrite?"):
+                    export_path = None
+                    export_format = None
+                    continue
+
+            try:
+                composer.export(export_format=export_format, filepath=full_export_path)
+                logger.info(
+                    f"Exported dataset to {export_path} in {export_format} format. It's now officially your data!"
+                )
+                break  # Exit the function if export is successful
+            except Exception as e:
+                logger.error(f"Export failed due to: {str(e)}")
+                if not click.confirm(
+                    "Do you want to try exporting again with a different format or path?"
+                ):
+                    logger.info("Skipping export. Moving on!")
+                    break  # Exit the function if user doesn't want to try again
+                # If user wants to try again, reset format and path to prompt user again
+                export_format = None
+                export_path = None
     else:
         logger.info("Skipping export. That's cool too! Adieu!")
-        return
 
     # Ask if they want to publish the exported dataset
     if click.confirm("Do you want to publish the dataset?"):
@@ -148,7 +201,6 @@ def run(
             "Enter the dataset identifier",
             type=str,
         )
-        composer.export()
         logger.info(f"Published dataset to {dataset_identifier}. Happy sharing!")
     else:
         logger.info("Publishing skipped. Your data, your rules!")
