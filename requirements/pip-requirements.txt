@@ -357,6 +357,7 @@ huggingface-hub==0.24.6 \
     --hash=sha256:a990f3232aa985fe749bc9474060cbad75e8b2f115f6665a9fda5b9c97818970 \
     --hash=sha256:cc2579e761d070713eaa9c323e3debe39d5b464ae3a7261c39a9195b27bb8000
     # via
+    #   -r requirements/requirements.in
     #   datasets
     #   tokenizers
 idna==3.7 \

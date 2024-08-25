@@ -65,6 +65,7 @@ httpx==0.27.0
     # via openai
 huggingface-hub==0.24.6
     # via
+    #   -r requirements/requirements.in
     #   datasets
     #   tokenizers
 idna==3.8
