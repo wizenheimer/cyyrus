@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import List, Tuple
 
 import pandas as pd
@@ -7,6 +8,14 @@ from cyyrus.constants.messages import Messages
 from cyyrus.utils.logging import get_logger
 
 logger = get_logger(__name__)
+
+
+class ExportFormat(str, Enum):
+    HUGGINGFACE = "huggingface"
+    JSON = "json"
+    CSV = "csv"
+    PICKLE = "pickle"
+    PARQUET = "parquet"
 
 
 class DataFrameUtils:
