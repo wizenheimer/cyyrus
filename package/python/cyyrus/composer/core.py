@@ -1,11 +1,13 @@
 import importlib
 import inspect
+from pathlib import Path
 from typing import (
     Any,
     Dict,
     List,
     Optional,
     Type,
+    Union,
 )
 
 import pandas as pd
@@ -14,6 +16,7 @@ from datasets import Dataset, DatasetDict
 from cyyrus.composer.dataframe import (
     DataFrameUtils,
     DatasetUtils,
+    ExportFormat,
 )
 from cyyrus.composer.progress import conditional_tqdm
 from cyyrus.constants.messages import Messages
@@ -146,8 +149,71 @@ class Composer:
     # html
     def export(
         self,
-    ) -> DatasetDict:
-        logger.debug("Exporting dataframe to Hugging Face Dataset")
+        export_format: Union[ExportFormat, str],
+        filepath: Union[str, Path],
+    ) -> None:
+        logger.debug(f"Exporting data in {export_format} format to {filepath}")
+
+        # Validate and convert format to ExportFormat enum
+        if isinstance(export_format, str):
+            try:
+                export_format = ExportFormat(export_format.lower())
+            except ValueError:
+                raise ValueError(f"Unsupported export format: {export_format}")
+
+        # Validate and convert filepath to Path
+        if isinstance(filepath, str):
+            filepath = Path(filepath)
+
+        # Ensure the directory exists
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+
+        # Check if file already exists
+        if filepath.exists():
+            logger.warning(f"File {filepath} already exists. It will be overwritten.")
+
+        try:
+            # Prepare the data
+            prepared_data = self._prepare(export_format)
+
+            # Export the data
+            if export_format == ExportFormat.HUGGINGFACE:
+                logger.debug("Exporting Hugging Face DatasetDict")
+                prepared_data.save_to_disk(filepath)  # type: ignore
+            elif isinstance(prepared_data, pd.DataFrame):
+                if export_format == ExportFormat.JSON:
+                    prepared_data.to_json(
+                        filepath,
+                        orient="records",
+                        lines=True,
+                    )
+                elif export_format == ExportFormat.CSV:
+                    prepared_data.to_csv(
+                        filepath,
+                        index=False,
+                    )
+                elif export_format == ExportFormat.PICKLE:
+                    prepared_data.to_pickle(
+                        filepath,
+                    )
+                elif export_format == ExportFormat.PARQUET:
+                    prepared_data.to_parquet(
+                        filepath,
+                    )
+            else:
+                raise TypeError(f"Unsupported data type for exporting: {type(prepared_data)}")
+
+            logger.info(f"Data successfully exported to {filepath}")
+        except Exception as e:
+            logger.error(f"Failed to export data: {str(e)}")
+            raise
+
+    # Prepare the dataframe for export
+    def _prepare(
+        self,
+        export_format: ExportFormat = ExportFormat.HUGGINGFACE,
+    ) -> Union[DatasetDict, pd.DataFrame]:
+        logger.debug(f"Preparing dataframe for {export_format} export")
 
         # Handle nulls
         logger.debug("Attempting to handle nulls")
@@ -160,40 +226,45 @@ class Composer:
         )
         df = DataFrameUtils.ensure_unique_columns(df, self.spec.dataset.attributes.unique_columns)
 
-        # Convert to Hugging Face Dataset
-        logger.debug("Converting dataframe to Hugging Face Dataset")
-        dataset = Dataset.from_pandas(df)
+        if export_format == ExportFormat.HUGGINGFACE:
+            # Convert to Hugging Face Dataset
+            logger.debug("Converting dataframe to Hugging Face Dataset")
+            dataset = Dataset.from_pandas(df)
 
-        # Shuffle the dataset
-        logger.debug("Shuffling the dataset")
-        dataset = dataset.shuffle(seed=self.spec.dataset.shuffle.seed)
+            # Shuffle the dataset
+            logger.debug("Shuffling the dataset")
+            dataset = dataset.shuffle(seed=self.spec.dataset.shuffle.seed)
 
-        # Split the dataset
-        logger.debug("Splitting the dataset")
-        train_set, test_set = DatasetUtils.split_dataset(
-            dataset,
-            self.spec.dataset.splits.train or 0.8,  # default to 0.8 if not specified
-            self.spec.dataset.splits.test or 0.2,  # default to 0.2 if not specified
-            self.spec.dataset.splits.seed or 42,  # default to 42 if not specified
-        )
+            # Split the dataset
+            logger.debug("Splitting the dataset")
+            train_set, test_set = DatasetUtils.split_dataset(
+                dataset,
+                self.spec.dataset.splits.train or 0.8,  # default to 0.8 if not specified
+                self.spec.dataset.splits.test or 0.2,  # default to 0.2 if not specified
+                self.spec.dataset.splits.seed or 42,  # default to 42 if not specified
+            )
 
-        # Create DatasetDict
-        logger.debug("Creating DatasetDict with train and test splits")
-        hf_dataset = DatasetDict(
-            {
-                "train": train_set,
-                "test": test_set,
-            },
-        )
+            # Create DatasetDict
+            logger.debug("Creating DatasetDict with train and test splits")
+            hf_dataset = DatasetDict(
+                {
+                    "train": train_set,
+                    "test": test_set,
+                },
+            )
 
-        # Set dataset metadata
-        logger.debug("Setting dataset metadata")
-        for split in hf_dataset.values():
-            split.info.description = self.spec.dataset.metadata.description
-            split.info.license = self.spec.dataset.metadata.license
+            # Set dataset metadata
+            logger.debug("Setting dataset metadata")
+            for split in hf_dataset.values():
+                split.info.description = self.spec.dataset.metadata.description
+                split.info.license = self.spec.dataset.metadata.license
 
-        logger.debug("Export complete")
-        return hf_dataset
+            logger.debug("Export complete")
+            return hf_dataset
+
+        else:
+            logger.debug(f"Preparing dataframe for {format} format")
+            return df
 
     def _import_columns(
         self,
