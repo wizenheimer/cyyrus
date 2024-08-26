@@ -1,5 +1,6 @@
 import importlib
 import inspect
+import tempfile
 from pathlib import Path
 from typing import (
     Any,
@@ -12,6 +13,7 @@ from typing import (
 
 import pandas as pd
 from datasets import Dataset, DatasetDict
+from huggingface_hub.hf_api import HfApi
 
 from cyyrus.composer.dataframe import (
     DataFrameUtils,
@@ -66,16 +68,10 @@ class Composer:
     ):
         logger.debug("Iterating over levels in the spec")
         # Iterate over each level in the spec
-        for level_index, level in conditional_tqdm(
-            enumerate(self.spec.levels()),
-            use_tqdm=not dry_run,
-        ):
+        for level_index, level in enumerate(self.spec.levels()):
             logger.debug(f"Processing level: {level_index}")
             # Merge tasks in the level
-            for input_columns, output_column, task_type, task_properties in conditional_tqdm(
-                level,
-                use_tqdm=not dry_run,
-            ):
+            for input_columns, output_column, task_type, task_properties in level:
                 logger.debug(f"Processing task: {task_type}")
 
                 if dry_run:
@@ -396,44 +392,37 @@ class Composer:
             hf_dataset: DatasetDict = self._prepare(ExportFormat.HUGGINGFACE)  # type: ignore
 
             # Initialize Hugging Face API
-            # api = HfApi(token=huggingface_token)
+            api = HfApi(token=huggingface_token)
 
             # Create or update the dataset on Hugging Face
-            # api.create_repo(
-            #     repo_id=repository_id,
-            #     repo_type="dataset",
-            #     exist_ok=True,
-            #     private=private,
-            # )
-
-            hf_dataset.push_to_hub(
+            api.create_repo(
                 repo_id=repository_id,
-                token=huggingface_token,
-                commit_message="build: publish dataset using cyyrus",
-                commit_description="Publish dataset to Hugging Face",
+                repo_type="dataset",
+                exist_ok=True,
                 private=private,
             )
 
             # # Save the dataset to a temporary directory
-            # with tempfile.TemporaryDirectory() as tmp_dir:
-            #     # Save the dataset to the temporary directory
-            #     hf_dataset.save_to_disk(tmp_dir)
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                # Save the dataset to the temporary directory
+                hf_dataset.save_to_disk(tmp_dir)
 
-            #     # Generate the README file
-            #     readme_content = MarkdownUtils.generate_readme(
-            #         self.spec,
-            #         repository_id,
-            #         self.dataframe,
-            #     )
-            #     with open(f"{tmp_dir}/README.md", "w") as readme_file:
-            #         readme_file.write(readme_content)
+                # Generate the README file
+                readme_content = MarkdownUtils.generate_readme(
+                    self.spec,
+                    repository_id,
+                    self.dataframe,
+                )
+                with open(f"{tmp_dir}/README.md", "w") as readme_file:
+                    readme_file.write(readme_content)
 
-            #     # Upload the dataset files
-            #     api.upload_folder(
-            #         repo_id=repository_id,
-            #         folder_path=tmp_dir,
-            #         repo_type="dataset",
-            #     )
+                # Upload the dataset files
+                api.upload_folder(
+                    repo_id=repository_id,
+                    folder_path=tmp_dir,
+                    repo_type="dataset",
+                    multi_commits=True,
+                )
 
             logger.info(f"Dataset successfully published to {repository_id}")
         except Exception as e:
