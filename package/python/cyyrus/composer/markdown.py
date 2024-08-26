@@ -1,15 +1,47 @@
+import pandas as pd
 from jinja2 import Template
 
 from cyyrus.models.spec import Spec
 
 
-def get_template_string():
-    return """
-# {{ spec.dataset.metadata.name }}
+class MarkdownUtils:
+    @staticmethod
+    def generate_readme(
+        spec: Spec,
+        repository_id: str,
+        dataframe: pd.DataFrame,
+    ) -> str:
+        template = Template(MarkdownUtils.get_template_string())
+        return template.render(
+            spec=spec,
+            repository_id=repository_id,
+            dataframe=dataframe,
+        )
 
-{{ spec.dataset.metadata.description }}
+    @staticmethod
+    def get_template_string():
+        return """
+# {{ spec.dataset.metadata.name or "Cyyrus Dataset" }}
 
-This dataset was generated using [Cyyrus](https://github.com/CyyrusAI/cyyrus), an open-source library for creating and managing datasets.
+{{ spec.dataset.metadata.description or "No description provided." }}
+
+This dataset was generated using [Cyyrus](https://github.com/wizenheimer/cyyrus), an open-source library for creating and managing datasets.
+
+## Dataset Attributes
+
+{% if dataframe is not none and not dataframe.empty %}
+{{ dataframe.head().to_markdown() }}
+{% else %}
+No data available to display attributes.
+{% endif %}
+
+## Dataset Statistics
+
+{% if dataframe is not none and not dataframe.empty %}
+{{ dataframe.describe().to_markdown() }}
+{% else %}
+No data available to display statistics.
+{% endif %}
 
 ## Using the Dataset
 
@@ -18,7 +50,7 @@ To use this dataset with the Hugging Face `datasets` library:
 ```python
 from datasets import load_dataset
 
-dataset = load_dataset("{{ repository_id }}")
+dataset = load_dataset("{{ repository_id or 'cyyrus/cyyrus-dataset' }}")
 ```
 
 ## License
@@ -47,11 +79,3 @@ This dataset was created using [Cyyrus](https://github.com/wizenheimer/cyyrus), 
 
 For any questions or issues related to this dataset, please open an issue on the [Cyyrus GitHub repository](https://github.com/wizenheimer/cyyrus/issues).
 """
-
-
-def generate_readme(
-    spec: Spec,
-    repository_id: str,
-) -> str:
-    template = Template(get_template_string())
-    return template.render(spec=spec, repository_id=repository_id)
