@@ -8,7 +8,7 @@ dataset:
     description: Dataset containing the invoice data # Description of the dataset
     tags: [invoice, document] # Tags of the dataset
     license: CC-BY-NC-SA # License of the dataset
-    language: en # Language of the dataset
+    languages: [en] # Language of the dataset
 
   # Define how to shuffle the dataset
   shuffle:

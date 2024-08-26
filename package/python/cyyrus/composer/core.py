@@ -15,9 +15,10 @@ from datasets import Dataset, DatasetDict
 
 from cyyrus.composer.dataframe import (
     DataFrameUtils,
-    DatasetUtils,
     ExportFormat,
 )
+from cyyrus.composer.dataset import DatasetUtils
+from cyyrus.composer.markdown import MarkdownUtils
 from cyyrus.composer.progress import conditional_tqdm
 from cyyrus.constants.messages import Messages
 from cyyrus.models.spec import Spec
@@ -101,6 +102,7 @@ class Composer:
         level_index: int = 0,
         dry_run: bool = False,
     ):
+        logger.info(f"Preparing column: {output_column}")
         logger.info(f"Executing task: {task_type}")
         logger.debug(f"Inputs: {input_columns}")
         logger.debug(f"Output: {output_column}")
@@ -140,13 +142,6 @@ class Composer:
             column_data=task_results,
         )
 
-    # Add support for local exports
-    # json
-    # csv
-    # parquet
-    # pickle
-    # orc
-    # html
     def export(
         self,
         export_format: Union[ExportFormat, str],
@@ -177,9 +172,17 @@ class Composer:
             prepared_data = self._prepare(export_format)
 
             # Export the data
-            if export_format == ExportFormat.HUGGINGFACE:
+            if isinstance(prepared_data, DatasetDict) or isinstance(prepared_data, Dataset):
                 logger.debug("Exporting Hugging Face DatasetDict")
-                prepared_data.save_to_disk(filepath)  # type: ignore
+                prepared_data.save_to_disk(filepath)
+                readme_content = MarkdownUtils.generate_readme(
+                    self.spec,
+                    self.spec.dataset.metadata.name,
+                    self.dataframe,
+                )
+                with open(f"{filepath}/README.md", "w") as readme_file:
+                    readme_file.write(readme_content)
+
             elif isinstance(prepared_data, pd.DataFrame):
                 if export_format == ExportFormat.JSON:
                     prepared_data.to_json(
@@ -379,3 +382,60 @@ class Composer:
         self.dataframe = temp_df.dropna(how="all").reset_index(drop=True)
 
         logger.debug("Dataframe refreshed")
+
+    def publish(
+        self,
+        repository_id: str,
+        huggingface_token: str,
+        private: bool = False,
+    ):
+        logger.info(f"Publishing dataset to Hugging Face: {repository_id}")
+
+        try:
+            # Prepare the dataset
+            hf_dataset: DatasetDict = self._prepare(ExportFormat.HUGGINGFACE)  # type: ignore
+
+            # Initialize Hugging Face API
+            # api = HfApi(token=huggingface_token)
+
+            # Create or update the dataset on Hugging Face
+            # api.create_repo(
+            #     repo_id=repository_id,
+            #     repo_type="dataset",
+            #     exist_ok=True,
+            #     private=private,
+            # )
+
+            hf_dataset.push_to_hub(
+                repo_id=repository_id,
+                token=huggingface_token,
+                commit_message="build: publish dataset using cyyrus",
+                commit_description="Publish dataset to Hugging Face",
+                private=private,
+            )
+
+            # # Save the dataset to a temporary directory
+            # with tempfile.TemporaryDirectory() as tmp_dir:
+            #     # Save the dataset to the temporary directory
+            #     hf_dataset.save_to_disk(tmp_dir)
+
+            #     # Generate the README file
+            #     readme_content = MarkdownUtils.generate_readme(
+            #         self.spec,
+            #         repository_id,
+            #         self.dataframe,
+            #     )
+            #     with open(f"{tmp_dir}/README.md", "w") as readme_file:
+            #         readme_file.write(readme_content)
+
+            #     # Upload the dataset files
+            #     api.upload_folder(
+            #         repo_id=repository_id,
+            #         folder_path=tmp_dir,
+            #         repo_type="dataset",
+            #     )
+
+            logger.info(f"Dataset successfully published to {repository_id}")
+        except Exception as e:
+            logger.error(f"Failed to publish dataset: {str(e)}")
+            raise

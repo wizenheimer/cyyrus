@@ -26,6 +26,7 @@ class DatasetMetadata(BaseModel):
     tags: List[str] = Field(
         default=[
             "dataset",
+            "cyyrus",
         ],
         description="Tags for the dataset",
     )
@@ -33,6 +34,22 @@ class DatasetMetadata(BaseModel):
         default="MIT",
         description="License for the dataset",
     )
+    languages: List[str] = Field(
+        default=[
+            "en",
+        ],
+        description="Languages for the dataset",
+    )
+
+    @field_validator("tags")
+    @classmethod
+    def add_cyyrus_tag(
+        cls,
+        v: List[str],
+    ) -> List[str]:
+        if "cyyrus" not in v:
+            v.append("cyyrus")
+        return v
 
 
 class DatasetShuffle(BaseModel):

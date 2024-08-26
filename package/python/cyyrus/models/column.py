@@ -12,3 +12,7 @@ class Column(BaseModel):
         default=[],
         description="Input to the task",
     )
+    description: str = Field(
+        default="",
+        description="Description of the column",
+    )
