@@ -320,7 +320,9 @@ def get_huggingface_token(huggingface_token):
         return huggingface_token
 
     hf_token = os.environ.get("HF_TOKEN")
-    if hf_token and click.confirm(f"HF_TOKEN found in environment. Use '{hf_token}'?"):
+    if hf_token and click.confirm(
+        f"HF_TOKEN found in environment. Use '{hf_token[:5]}...{hf_token[-5:]}'?"
+    ):
         return hf_token
 
     return click.prompt("Enter the Hugging Face token", type=str, hide_input=True)
