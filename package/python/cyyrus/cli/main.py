@@ -120,6 +120,7 @@ def run(
     logger.info("CLI started. Buckle up, it's going to be a wild wild ride!")
 
     configure_litellm(log_level)
+    configure_hf()
 
     # ============================
     #      Load the spec
@@ -184,6 +185,10 @@ def configure_litellm(log_level):
     litellm_verbosity = False  # log_level == "DEBUG"
     litellm.set_verbose = litellm_verbosity
     logger.debug(f"liteLLM verbose mode set to {litellm_verbosity}")
+
+
+def configure_hf():
+    os.environ["HF_HUB_DISABLE_EXPERIMENTAL_WARNING"] = "1"
 
 
 def perform_dry_run():

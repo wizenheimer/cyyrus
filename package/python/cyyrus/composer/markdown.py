@@ -27,22 +27,6 @@ class MarkdownUtils:
 
 This dataset was generated using [Cyyrus](https://github.com/wizenheimer/cyyrus), an open-source library for creating and managing datasets.
 
-## Dataset Attributes
-
-{% if dataframe is not none and not dataframe.empty %}
-{{ dataframe.head().to_markdown() }}
-{% else %}
-No data available to display attributes.
-{% endif %}
-
-## Dataset Statistics
-
-{% if dataframe is not none and not dataframe.empty %}
-{{ dataframe.describe().to_markdown() }}
-{% else %}
-No data available to display statistics.
-{% endif %}
-
 ## Using the Dataset
 
 To use this dataset with the Hugging Face `datasets` library:
