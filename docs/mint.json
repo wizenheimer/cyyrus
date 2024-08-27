@@ -1,91 +1,216 @@
 {
-  "$schema": "https://mintlify.com/schema.json",
-  "name": "Starter Kit",
-  "logo": {
-    "dark": "/logo/dark.svg",
-    "light": "/logo/light.svg"
-  },
-  "favicon": "/favicon.svg",
-  "colors": {
-    "primary": "#0D9373",
-    "light": "#07C983",
-    "dark": "#0D9373",
-    "anchors": {
-      "from": "#0D9373",
-      "to": "#07C983"
-    }
-  },
-  "topbarLinks": [
-    {
-      "name": "Support",
-      "url": "mailto:hi@mintlify.com"
-    }
-  ],
-  "topbarCtaButton": {
-    "name": "Dashboard",
-    "url": "https://dashboard.mintlify.com"
-  },
-  "tabs": [
-    {
-      "name": "API Reference",
-      "url": "api-reference"
-    }
-  ],
-  "anchors": [
-    {
-      "name": "Documentation",
-      "icon": "book-open-cover",
-      "url": "https://mintlify.com/docs"
+    "$schema": "https://mintlify.com/schema.json",
+    "name": "Cyyrus",
+    "logo": {
+        "dark": "/logo/cyyrus-dark.svg",
+        "light": "/logo/cyyrus-light.svg"
     },
-    {
-      "name": "Community",
-      "icon": "slack",
-      "url": "https://mintlify.com/community"
+    "favicon": "/favicon.svg",
+    "colors": {
+        "primary": "#5271ff",
+        "light": "#4063ff",
+        "dark": "#5271ff",
+        "anchors": {
+            "from": "#5271ff",
+            "to": "#4063ff"
+        },
+        "background": {
+            "dark": "#000000"
+        }
     },
-    {
-      "name": "Blog",
-      "icon": "newspaper",
-      "url": "https://mintlify.com/blog"
+    "topbarCtaButton": {
+        "type": "github",
+        "url": "https://github.com/wizenheimer/cyyrus"
+    },
+    "modeToggle": {
+        "default": "dark",
+        "isHidden": true
+    },
+    "anchors": [
+        {
+            "name": "Documentation",
+            "icon": "book-open-cover",
+            "url": "https://cyyrus.com"
+        },
+        {
+            "name": "GitHub",
+            "icon": "github",
+            "url": "https://github.com/wizenheimer/cyyrus"
+        },
+        {
+            "name": "Examples",
+            "icon": "scroll",
+            "url": "https://github.com/wizenheimer/cyyrus"
+        },
+        {
+            "name": "Spaces",
+            "icon": "rocket",
+            "url": "https://github.com/wizenheimer/cyyrus"
+        }
+    ],
+    "navigation": [
+        {
+            "group": "Overview",
+            "pages": [
+                "Introduction",
+                "overview/Contributing",
+                "overview/Roadmap",
+                "overview/CLI"
+            ]
+        },
+        {
+            "group": "Quickstart",
+            "pages": [
+                {
+                    "group": "Library",
+                    "pages": [
+                        "quickstart/library/Installation",
+                        "quickstart/library/Configuration",
+                        "quickstart/library/Generation",
+                        "quickstart/library/Publishing"
+                    ]
+                },
+                {
+                    "group": "Components",
+                    "pages": [
+                        "quickstart/components/Installation",
+                        "quickstart/components/Configuration",
+                        "quickstart/components/Generation",
+                        "quickstart/components/Publishing"
+                    ]
+                }
+            ]
+        },
+        {
+            "group": "Concepts",
+            "pages": [
+                "concepts/Tasks",
+                "concepts/Types",
+                "concepts/Datasets",
+                "concepts/Columns"
+            ]
+        },
+        {
+            "group": "Tasks",
+            "pages": [
+                "tasks/Extraction",
+                "tasks/Generation",
+                "tasks/Labelling",
+                "tasks/Parsing",
+                "tasks/Scraping"
+            ]
+        },
+        {
+            "group": "Guides",
+            "pages": [
+                {
+                    "group": "Image",
+                    "pages": [
+                        "guides/Image/Captioning",
+                        "guides/Image/Classification",
+                        "guides/Image/Embedding",
+                        "guides/Image/Dense_Region_Captioning",
+                        "guides/Image/Graph_Parsing",
+                        "guides/Image/Object_Detection",
+                        "guides/Image/Optical_Character_Recognition"
+                    ]
+                },
+                {
+                    "group": "Text",
+                    "pages": [
+                        "guides/Text/Finetuning",
+                        "guides/Text/Document_Parsing",
+                        "guides/Text/Embedding",
+                        "guides/Text/Evaluation",
+                        "guides/Text/Seq2Seq"
+                    ]
+                },
+                {
+                    "group": "Audio",
+                    "pages": [
+                        "guides/Audio/Diarization",
+                        "guides/Audio/Transcription"
+                    ]
+                },
+                {
+                    "group": "Video",
+                    "pages": [
+                        "guides/Video/Audio_Extraction",
+                        "guides/Video/Face_Extraction",
+                        "guides/Video/Key_Frame_Extraction"
+                    ]
+                }
+            ]
+        },
+        {
+            "group": "Glossary",
+            "pages": [
+                {
+                    "group": "Tasks",
+                    "pages": [
+                        "glossary/Tasks/Reference_Based",
+                        "glossary/Tasks/Reference_Free"
+                    ]
+                },
+                {
+                    "group": "Image",
+                    "pages": [
+                        "glossary/Image/Captioning",
+                        "glossary/Image/Classification",
+                        "glossary/Image/Embedding",
+                        "glossary/Image/Dense_Region_Captioning",
+                        "glossary/Image/Graph_Parsing",
+                        "glossary/Image/Object_Detection",
+                        "glossary/Image/Optical_Character_Recognition"
+                    ]
+                },
+                {
+                    "group": "Text",
+                    "pages": [
+                        "glossary/Text/Finetuning",
+                        "glossary/Text/Document_Parsing",
+                        "glossary/Text/Embedding",
+                        "glossary/Text/Evaluation",
+                        "glossary/Text/Seq2Seq"
+                    ]
+                },
+                {
+                    "group": "Audio",
+                    "pages": [
+                        "glossary/Audio/Diarization",
+                        "glossary/Audio/Transcription"
+                    ]
+                },
+                {
+                    "group": "Video",
+                    "pages": [
+                        "glossary/Video/Audio_Extraction",
+                        "glossary/Video/Face_Extraction",
+                        "glossary/Video/Key_Frame_Extraction"
+                    ]
+                },
+                {
+                    "group": "Datasets",
+                    "pages": [
+                        "glossary/Datasets/Huggingface",
+                        "glossary/Datasets/Local"
+                    ]
+                }
+            ]
+        }
+    ],
+    "tabs": [
+        {
+            "name": "Guides",
+            "url": "guides"
+        },
+        {
+            "name": "Glossary",
+            "url": "glossary"
+        }
+    ],
+    "footerSocials": {
+        "github": "https://github.com/wizenheimer",
+        "linkedin": "https://www.linkedin.com/in/0xnayan"
     }
-  ],
-  "navigation": [
-    {
-      "group": "Get Started",
-      "pages": [
-        "introduction",
-        "quickstart",
-        "development"
-      ]
-    },
-    {
-      "group": "Essentials",
-      "pages": [
-        "essentials/markdown",
-        "essentials/code",
-        "essentials/images",
-        "essentials/settings",
-        "essentials/navigation",
-        "essentials/reusable-snippets"
-      ]
-    },
-    {
-      "group": "API Documentation",
-      "pages": [
-        "api-reference/introduction"
-      ]
-    },
-    {
-      "group": "Endpoint Examples",
-      "pages": [
-        "api-reference/endpoint/get",
-        "api-reference/endpoint/create",
-        "api-reference/endpoint/delete"
-      ]
-    }
-  ],
-  "footerSocials": {
-    "x": "https://x.com/mintlify",
-    "github": "https://github.com/mintlify",
-    "linkedin": "https://www.linkedin.com/company/mintsearch"
-  }
 }
