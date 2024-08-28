@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List
+from typing import Any, Dict, List
 
 import pandas as pd
 
@@ -62,4 +62,99 @@ class DataFrameUtils:
             if removed_count > 0:
                 logger.warning(Messages.NON_UNIQUE_COLUMN_VALUES)
                 logger.warning(f"Unique columns: {unique_columns}, Removed count: {removed_count}")
+        return df
+
+    @staticmethod
+    def handle_flattening(
+        df: pd.DataFrame,
+        columns_to_flatten: List[str],
+    ) -> pd.DataFrame:
+        """
+        Robustly flatten specified dictionary columns in a DataFrame.
+
+        Args:
+        df (pd.DataFrame): The input DataFrame.
+        columns_to_flatten (list): List of column names containing dictionaries to flatten.
+
+        Returns:
+        pd.DataFrame: A new DataFrame with specified dictionary columns flattened.
+        """
+        df = df.copy()
+        flattened_columns = []
+
+        for col in columns_to_flatten:
+            if col not in df.columns:
+                logger.debug(f"Warning: Column '{col}' not found in the DataFrame. Skipping.")
+                continue
+
+            if not df[col].dtype == "object":
+                logger.debug(f"Warning: Column '{col}' is not of object type. Skipping.")
+                continue
+
+            # Check if the column contains dictionaries
+            if not df[col].apply(lambda x: isinstance(x, dict)).all():
+                logger.debug(
+                    f"Warning: Column '{col}' does not contain only dictionaries. Skipping."
+                )
+                continue
+
+            try:
+                # Flatten the dictionary column
+                flattened = pd.json_normalize(df[col].apply(lambda x: x or {}))  # type: ignore
+
+                # Rename the new columns to avoid conflicts
+                flattened.columns = [f"{col}_{key}" for key in flattened.columns]
+
+                # Add the flattened columns to our list
+                flattened_columns.append(flattened)
+
+                # Drop the original column
+                df = df.drop(columns=[col])
+            except Exception as e:
+                logger.debug(f"Error flattening column '{col}': {str(e)}. Skipping.")
+
+        # Concatenate all flattened columns with the original DataFrame
+        if flattened_columns:
+            df = pd.concat([df] + flattened_columns, axis=1)
+
+        return df
+
+    # Helper function to safely get nested dictionary values
+    @staticmethod
+    def safe_get(
+        dct: Dict[str, Any],
+        *keys: str,
+    ) -> Any:
+        for key in keys:
+            try:
+                dct = dct[key]
+            except (KeyError, TypeError):
+                return None
+        return dct
+
+    @staticmethod
+    def remove_columns(
+        df: pd.DataFrame,
+        columns_to_remove: List[str],
+    ) -> pd.DataFrame:
+        """
+        Remove specified columns from a DataFrame if they exist.
+
+        Args:
+        df (pd.DataFrame): The input DataFrame.
+        columns_to_remove (List[str]): List of column names to remove.
+
+        Returns:
+        pd.DataFrame: A new DataFrame with specified columns removed.
+        """
+        df = df.copy()
+        existing_columns = df.columns.tolist()
+
+        for col in columns_to_remove:
+            if col in existing_columns:
+                df = df.drop(columns=[col])
+                logger.debug(f"Removed column: '{col}'")
+            else:
+                logger.debug(f"Column '{col}' not found in the DataFrame. Skipping.")
+
         return df
