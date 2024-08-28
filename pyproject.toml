@@ -26,7 +26,7 @@ testpaths = "tests"
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "0.0.1"
+version = "0.1.0"
 tag_format = "$version"
 version_scheme = "semver2"
 version_files = ["setup.py", "package/python/cyyrus/__version__.py"]
