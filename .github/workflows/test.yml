@@ -15,8 +15,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -r pip-requirements.txt
-          pip install -r requirements-dev.txt
+          pip install -r requirements/pip-requirements.txt
+          pip install -r requirements/requirements-dev.txt
 
       - name: Test distribution
         run: |
