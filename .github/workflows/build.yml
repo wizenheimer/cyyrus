@@ -15,7 +15,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python3 -m pip install -r requirements/pip-requirements.txt requirements/requirements-dev.txt
+          python3 -m pip install -r requirements/pip-requirements.txt
+          python3 -m pip install -r requirements/requirements-dev.txt
 
       - name: Build distribution
         run: python3 -m build
