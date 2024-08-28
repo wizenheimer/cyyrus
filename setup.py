@@ -1,10 +1,14 @@
 import os
 import subprocess
 import sys
+from pathlib import Path
 
 from setuptools import find_packages, setup
 from setuptools.command.develop import develop
 from setuptools.command.install import install
+
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
 
 
 class InstallSystemDependencies(install):
@@ -64,6 +68,8 @@ setup(
     description="...",
     use_scm_version=True,
     author="wizenheimer",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     author_email="cyyruslabs@gmail.com",
     url="https://github.com/wizenheimer/cyyrus",
     packages=packages,

@@ -104,15 +104,15 @@ compile-dependencies:
 
 ## compile-requirements: Compile main requirements file
 compile-requirements:
-	@cd $(BASE_DIR) && $(PIP_COMPILE) -q --allow-unsafe --resolver=backtracking --generate-hashes --no-strip-extras -o $(REQUIREMENTS_DIR)/requirements.txt $(REQUIREMENTS_DIR)/requirements.in
+	@cd $(BASE_DIR) && $(PIP_COMPILE) -q --resolver=backtracking --generate-hashes --no-strip-extras -o $(REQUIREMENTS_DIR)/requirements.txt $(REQUIREMENTS_DIR)/requirements.in
 
 ## compile-constraints: Compile constraints file
 compile-constraints:
-	@cd $(BASE_DIR) && $(PIP_COMPILE) -q --allow-unsafe --resolver=backtracking --upgrade --strip-extras -o $(REQUIREMENTS_DIR)/constraints.txt $(REQUIREMENTS_DIR)/requirements.in
+	@cd $(BASE_DIR) && $(PIP_COMPILE) -q --resolver=backtracking --upgrade --strip-extras -o $(REQUIREMENTS_DIR)/constraints.txt $(REQUIREMENTS_DIR)/requirements.in
 
 ## compile-dev-requirements: Compile development requirements file
 compile-dev-requirements:
-	@cd $(BASE_DIR) && $(PIP_COMPILE) -q --allow-unsafe --resolver=backtracking --generate-hashes --no-strip-extras -o $(REQUIREMENTS_DIR)/requirements-dev.txt $(REQUIREMENTS_DIR)/requirements-dev.in
+	@cd $(BASE_DIR) && $(PIP_COMPILE) -q --resolver=backtracking --generate-hashes --no-strip-extras -o $(REQUIREMENTS_DIR)/requirements-dev.txt $(REQUIREMENTS_DIR)/requirements-dev.in
 
 # Define variables for add-dependency target
 package ?=

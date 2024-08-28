@@ -13,12 +13,15 @@ jobs:
         with:
           python-version: 3.11
 
-      - name: Install dependencies
+      - name: Compile Requirements and Install dependencies
         run: |
-          python3 -m pip install -r pip-requirements.txt requirements-dev.txt
+          python3 -m pip install -r requirements/pip-requirements.txt
+          python3 -m pip install pip-tools
+          pip-compile --resolver=backtracking --generate-hashes requirements/requirements-dev.in -o requirements/requirements-dev.txt
+          python3 -m pip install -r requirements/requirements-dev.txt
 
       - name: Build distribution
-        run: make build
+        run: python3 -m build
 
       - uses: actions/upload-artifact@v3
         with:
