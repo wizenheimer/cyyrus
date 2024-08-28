@@ -40,7 +40,6 @@ repos:
         args:
           [
             -q,
-            --allow-unsafe,
             --resolver=backtracking,
             --generate-hashes,
             requirements/requirements.in,
@@ -52,7 +51,6 @@ repos:
         args:
           [
             -q,
-            --allow-unsafe,
             --resolver=backtracking,
             --generate-hashes,
             requirements/requirements.in,
@@ -64,7 +62,6 @@ repos:
         args:
           [
             -q,
-            --allow-unsafe,
             --resolver=backtracking,
             --strip-extras,
             requirements/requirements.in,
@@ -76,7 +73,6 @@ repos:
         args:
           [
             -q,
-            --allow-unsafe,
             --resolver=backtracking,
             --generate-hashes,
             requirements/requirements-dev.in,
