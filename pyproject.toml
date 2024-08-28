@@ -2,6 +2,7 @@
 name = "cyyrus"
 version = "0.0.1"
 dynamic = ["description", "authors", "dependencies", "scripts"]
+readme = "README.md"
 
 [tool.black]
 line-length = 100
