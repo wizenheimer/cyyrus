@@ -102,7 +102,15 @@ class DefaultModel(BaseModel):
     Pydantic model for the default data type.
     """
 
-    result: str = Field(..., description="result")
+    value: str = Field(..., description="value")
+
+
+class MarkdownModel(BaseModel):
+    """
+    Pydantic model representing the structure and content of a Markdown file.
+    """
+
+    markdown: str = Field(..., description="Markdown content")
 
 
 class TypeMappingUtils:
