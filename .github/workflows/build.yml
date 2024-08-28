@@ -17,7 +17,7 @@ jobs:
         run: |
           python3 -m pip install -r requirements/pip-requirements.txt
           python3 -m pip install pip-tools
-          python3 -m pip-compile --resolver=backtracking --generate-hashes requirements/requirements-dev.in -o requirements/requirements-dev.txt
+          pip-compile --resolver=backtracking --generate-hashes requirements/requirements-dev.in -o requirements/requirements-dev.txt
           python3 -m pip install -r requirements/requirements-dev.txt
 
       - name: Build distribution
