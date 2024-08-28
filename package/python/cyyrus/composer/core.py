@@ -214,16 +214,39 @@ class Composer:
     ) -> Union[DatasetDict, pd.DataFrame]:
         logger.debug(f"Preparing dataframe for {export_format} export")
 
+        logger.debug("Handling flattening")
+        df = DataFrameUtils.handle_flattening(
+            self.dataframe,
+            self.spec.dataset.attributes.flatten_columns,
+        )
+
         # Handle nulls
         logger.debug("Attempting to handle nulls")
-        df = DataFrameUtils.handle_nulls(self.dataframe, self.spec.dataset.attributes.nulls)
-
-        # Ensure required columns and unique columns
-        logger.debug("Ensuring required and unique columns")
-        df = DataFrameUtils.ensure_required_columns(
-            df, self.spec.dataset.attributes.required_columns
+        df = DataFrameUtils.handle_nulls(
+            self.dataframe,
+            self.spec.dataset.attributes.nulls,
         )
-        df = DataFrameUtils.ensure_unique_columns(df, self.spec.dataset.attributes.unique_columns)
+
+        # Ensure unique columns
+        logger.debug("Ensuring required columns")
+        df = DataFrameUtils.ensure_required_columns(
+            df,
+            self.spec.dataset.attributes.required_columns,
+        )
+
+        # Ensure required columns
+        logger.debug("Ensuring required columns")
+        df = DataFrameUtils.ensure_unique_columns(
+            df,
+            self.spec.dataset.attributes.unique_columns,
+        )
+
+        # Remove unnecessary columns
+        logger.debug("Removing unnecessary columns")
+        df = DataFrameUtils.remove_columns(
+            df=df,
+            columns_to_remove=self.spec.dataset.attributes.exclude_columns,
+        )
 
         if export_format == ExportFormat.HUGGINGFACE:
             # Convert to Hugging Face Dataset

@@ -5,13 +5,14 @@ from pathlib import Path
 from typing import Optional
 
 import click
-import litellm
+from pandas import DataFrame
 
 from cyyrus.cli.utils import create_export_filepath, get_ascii_art
+from cyyrus.cli.visualizer import Visualizer
 from cyyrus.composer.core import Composer
 from cyyrus.composer.dataframe import ExportFormat
 from cyyrus.composer.utils import FunnyBones
-from cyyrus.models.spec import load_spec
+from cyyrus.models.spec import Spec, load_spec
 from cyyrus.utils.logging import get_logger, setup_logging
 
 
@@ -119,7 +120,6 @@ def run(
     print(get_ascii_art())
     logger.info("CLI started. Buckle up, it's going to be a wild wild ride!")
 
-    configure_litellm(log_level)
     configure_hf()
 
     # ============================
@@ -152,7 +152,11 @@ def run(
         logger.info("Skipping full run. Until next time!")
         return
 
-    display_sample_dataframe(composer.dataframe, logger)
+    display_intermediate_results(
+        composer.dataframe,
+        spec,
+        logger,
+    )
 
     # ============================
     #      Export the dataset
@@ -178,15 +182,6 @@ def run(
         logger.info("Dataset export skipped.")
 
 
-def configure_litellm(log_level):
-    logger = get_logger(__name__)
-    logger.debug(f"liteLLM logging level set to {log_level}")
-    os.environ["LITELLM_LOG"] = log_level
-    litellm_verbosity = False  # log_level == "DEBUG"
-    litellm.set_verbose = litellm_verbosity
-    logger.debug(f"liteLLM verbose mode set to {litellm_verbosity}")
-
-
 def configure_hf():
     os.environ["HF_HUB_DISABLE_EXPERIMENTAL_WARNING"] = "1"
 
@@ -199,10 +194,18 @@ def perform_full_run():
     return click.confirm("Do you want to perform a full run?", default=True)
 
 
-def display_sample_dataframe(df, logger):
-    click.echo("Sample dataframe:")
-    click.echo(df.head())
+def display_intermediate_results(
+    df: DataFrame,
+    spec: Spec,
+    logger,
+):
     logger.info("Here's a sneak peek of your data. Doesn't it look fabulous?")
+    Visualizer.display_dataframe_properties(
+        df,
+    )
+    Visualizer.display_dataset_properties(
+        spec.dataset,
+    )
 
 
 def export_dataset(

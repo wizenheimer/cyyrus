@@ -36,7 +36,9 @@ class Spec(BaseModel):
         super().__init__(*args, **kwargs)
         self._populate_concrete_model()
 
-    def _populate_concrete_model(self):
+    def _populate_concrete_model(
+        self,
+    ):
         """
         Create a concrete model for the response_format specified in the task properties.
         """
@@ -82,7 +84,9 @@ class Spec(BaseModel):
 
         logger.debug("Populated concrete models for response_format")
 
-    def extract_dag_representation(self) -> Dict[
+    def extract_dag_representation(
+        self,
+    ) -> Dict[
         str,
         List[str],
     ]:
@@ -94,7 +98,10 @@ class Spec(BaseModel):
         }
 
     @model_validator(mode="after")
-    def validate_dag(cls, values):
+    def validate_dag(
+        cls,
+        values,
+    ):
         """
         Validate the DAG representation of the spec.
         """
@@ -129,17 +136,41 @@ class Spec(BaseModel):
         return values
 
     @model_validator(mode="after")
-    def validate_columns_for_orphans(cls, values):
+    def validate_columns_for_orphans(
+        cls,
+        values,
+    ):
         """
         Validate that all columns have a task associated with them.
         """
         logger.debug("Validating columns for orphans")
         # Note: duplicates are handled by Pydantic + YAML Parser
-        required_columns = set(values.dataset.attributes.required_columns)
         all_column_names = set(values.columns.keys())
 
         # Check if all required columns exist in either columns or references
+        required_columns = set(values.dataset.attributes.required_columns)
         missing_columns = required_columns - all_column_names
+        if missing_columns:
+            logger.error(f"{Messages.REQUIRED_COLUMN_MISSING} columns: {missing_columns}")
+            raise ValueError(Messages.REQUIRED_COLUMN_MISSING)
+
+        # Check if all flatten columns exist in either columns or references
+        flatten_columns = set(values.dataset.attributes.flatten_columns)
+        missing_columns = flatten_columns - all_column_names
+        if missing_columns:
+            logger.error(f"{Messages.REQUIRED_COLUMN_MISSING} columns: {missing_columns}")
+            raise ValueError(Messages.REQUIRED_COLUMN_MISSING)
+
+        # Check if all unique columns exist in either columns or references
+        unique_columns = set(values.dataset.attributes.unique_columns)
+        missing_columns = unique_columns - all_column_names
+        if missing_columns:
+            logger.error(f"{Messages.REQUIRED_COLUMN_MISSING} columns: {missing_columns}")
+            raise ValueError(Messages.REQUIRED_COLUMN_MISSING)
+
+        # Check if all exclude columns exist in either columns or references
+        excluded_columns = set(values.dataset.attributes.exclude_columns)
+        missing_columns = excluded_columns - all_column_names
         if missing_columns:
             logger.error(f"{Messages.REQUIRED_COLUMN_MISSING} columns: {missing_columns}")
             raise ValueError(Messages.REQUIRED_COLUMN_MISSING)
@@ -148,7 +179,10 @@ class Spec(BaseModel):
         return values
 
     @model_validator(mode="after")
-    def validate_task_ids(cls, values):
+    def validate_task_ids(
+        cls,
+        values,
+    ):
         """
         Validate that all columns have a valid task_id associated with them.
         """
@@ -245,7 +279,10 @@ class Spec(BaseModel):
             yield [self.extract_task_info(node) for node in level]
 
 
-def env_var_constructor(loader, node):
+def env_var_constructor(
+    loader,
+    node,
+):
     """
     Custom YAML constructor to replace environment variables.
     """

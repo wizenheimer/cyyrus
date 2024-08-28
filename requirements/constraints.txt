@@ -10,7 +10,6 @@ aiohttp==3.10.5
     # via
     #   datasets
     #   fsspec
-    #   litellm
 aiosignal==1.3.1
     # via aiohttp
 annotated-types==0.7.0
@@ -20,10 +19,7 @@ anyio==4.4.0
     #   httpx
     #   openai
 attrs==24.2.0
-    # via
-    #   aiohttp
-    #   jsonschema
-    #   referencing
+    # via aiohttp
 certifi==2024.7.4
     # via
     #   httpcore
@@ -32,9 +28,7 @@ certifi==2024.7.4
 charset-normalizer==3.3.2
     # via requests
 click==8.1.7
-    # via
-    #   -r requirements/requirements.in
-    #   litellm
+    # via -r requirements/requirements.in
 colorlog==6.8.2
     # via -r requirements/requirements.in
 datasets==2.21.0
@@ -61,33 +55,24 @@ h11==0.14.0
     # via httpcore
 httpcore==1.0.5
     # via httpx
-httpx==0.27.0
+httpx==0.27.2
     # via openai
 huggingface-hub==0.24.6
     # via
     #   -r requirements/requirements.in
     #   datasets
-    #   tokenizers
 idna==3.8
     # via
     #   anyio
     #   httpx
     #   requests
     #   yarl
-importlib-metadata==8.4.0
-    # via litellm
-jinja2==3.1.4
-    # via litellm
 jiter==0.5.0
     # via openai
-jsonschema==4.23.0
-    # via litellm
-jsonschema-specifications==2023.12.1
-    # via jsonschema
-litellm==1.44.1
-    # via -r requirements/requirements.in
-markupsafe==2.1.5
-    # via jinja2
+markdown-it-py==3.0.0
+    # via rich
+mdurl==0.1.2
+    # via markdown-it-py
 multidict==6.0.5
     # via
     #   aiohttp
@@ -100,7 +85,7 @@ numpy==2.1.0
     #   pandas
     #   pyarrow
 openai==1.42.0
-    # via litellm
+    # via -r requirements/requirements.in
 packaging==24.1
     # via
     #   datasets
@@ -118,18 +103,17 @@ pyarrow==17.0.0
 pydantic==2.8.2
     # via
     #   -r requirements/requirements.in
-    #   litellm
     #   openai
 pydantic-core==2.20.1
     # via pydantic
 pydub==0.25.1
     # via -r requirements/requirements.in
+pygments==2.18.0
+    # via rich
 python-dateutil==2.9.0.post0
     # via pandas
 python-dotenv==1.0.1
-    # via
-    #   -r requirements/requirements.in
-    #   litellm
+    # via -r requirements/requirements.in
 python-json-logger==2.0.7
     # via -r requirements/requirements.in
 pytz==2024.1
@@ -138,22 +122,12 @@ pyyaml==6.0.2
     # via
     #   datasets
     #   huggingface-hub
-referencing==0.35.1
-    # via
-    #   jsonschema
-    #   jsonschema-specifications
-regex==2024.7.24
-    # via tiktoken
 requests==2.32.3
     # via
     #   datasets
     #   huggingface-hub
-    #   litellm
-    #   tiktoken
-rpds-py==0.20.0
-    # via
-    #   jsonschema
-    #   referencing
+rich==13.8.0
+    # via -r requirements/requirements.in
 six==1.16.0
     # via python-dateutil
 sniffio==1.3.1
@@ -161,12 +135,6 @@ sniffio==1.3.1
     #   anyio
     #   httpx
     #   openai
-tabulate==0.9.0
-    # via -r requirements/requirements.in
-tiktoken==0.7.0
-    # via litellm
-tokenizers==0.20.0
-    # via litellm
 tqdm==4.66.5
     # via
     #   -r requirements/requirements.in
@@ -187,5 +155,3 @@ xxhash==3.5.0
     # via datasets
 yarl==1.9.4
     # via aiohttp
-zipp==3.20.0
-    # via importlib-metadata

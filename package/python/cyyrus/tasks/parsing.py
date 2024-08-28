@@ -1,18 +1,26 @@
 import base64
+import copy
+import inspect
 import os
 import warnings
+from functools import lru_cache
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Set, Union
 
+from openai import OpenAI
 from pdf2image import convert_from_path
 from PIL import Image
 from pydub import AudioSegment
 
 from cyyrus.models.options import ParsedFormat
 from cyyrus.models.task_type import TaskType
+from cyyrus.models.types import MarkdownModel
 from cyyrus.tasks.base import BaseTask
-from cyyrus.tasks.generation import ModelUtils
+from cyyrus.tasks.utils import Base64ImageFinder, GeneralUtils, NestedDictAccessor
+from cyyrus.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 # For reference based generation, there's always a one-to-one mapping between the input and output
@@ -67,6 +75,20 @@ class ParsingTask(BaseTask):
             else self.task_properties["prompt"]
         )
 
+        parsed_format = NestedDictAccessor.get_nested_value(
+            data=self.task_properties,
+            key="parsed_format",
+            default=ParsingTask.DEFAULT_PARSED_FORMAT,
+        )
+
+        if parsed_format == ParsedFormat.MARKDOWN:
+            api_key = NestedDictAccessor.get_nested_value(
+                data=self.task_properties,
+                key="api_key",
+                default=None,
+            )
+            self.client = OpenAI(api_key=api_key)
+
     def execute(
         self,
         task_input: Dict[str, Any],
@@ -74,16 +96,19 @@ class ParsingTask(BaseTask):
         """
         Perform the parsing task.
         """
-        path = self._get_task_input(
+        pass
+        path = NestedDictAccessor.get_nested_value(
+            data=task_input,
             key=ParsingTask.EXPECTED_KEY,
-            task_input=task_input,
             default=ParsingTask.DEFAULT_DIRECTORY,
         )
-        file_type = self._get_task_property(
+        file_type = NestedDictAccessor.get_nested_value(
+            data=self.task_properties,
             key="file_type",
             default=ParsingTask.DEFAULT_FILE_TYPE,
         )
-        parsed_format = self._get_task_property(
+        parsed_format = NestedDictAccessor.get_nested_value(
+            data=self.task_properties,
             key="parsed_format",
             default=ParsingTask.DEFAULT_PARSED_FORMAT,
         )
@@ -116,11 +141,10 @@ class ParsingTask(BaseTask):
                 )
                 # Generate the final result
                 final_result.append(
-                    ModelUtils.generation(
-                        task_property=self.task_properties,
+                    self._trigger_generation(
                         task_input={
                             "image": base64_image,
-                        },
+                        }
                     )
                 )
         else:
@@ -129,19 +153,107 @@ class ParsingTask(BaseTask):
         # Return the final result
         return final_result
 
+    @lru_cache
+    def get_valid_completion_args(self) -> Set[str]:
+        completion_params = inspect.signature(self.client.chat.completions.create).parameters
+        # Return a set of valid argument names
+        return set(completion_params.keys())
+
+    def _trigger_generation(
+        self,
+        task_input: Dict[str, Any],
+    ) -> Any:
+        """
+        Trigger the generation task.
+        """
+        # Get Prompt from Task Property
+        generation_properties = copy.deepcopy(self.task_properties)
+        generation_properties.pop("prompt", None)
+
+        prompt = NestedDictAccessor.get_nested_value(
+            self.task_properties,
+            key="prompt",
+            default=ParsingTask.DEFAULT_PROMPT,
+        )
+
+        # Format the Prompt
+        formatted_prompt = GeneralUtils.populate_template(
+            prompt,
+            self.task_properties | task_input,  # Merge task_properties and task_input
+        )
+
+        # Format OpenAI Call
+        content = [
+            {
+                "type": "text",
+                "text": formatted_prompt,
+            }
+        ]
+
+        img_keys = Base64ImageFinder.find_base64_encoded_keys(task_input=task_input)
+
+        for img_key in img_keys:
+            base64_image = NestedDictAccessor.get_nested_value(
+                task_input,
+                img_key,
+                None,
+            )
+            if base64_image:
+                image_arg = {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{base64_image}",  # TODO(wizenheimer): add support for other image types
+                        "detail": "low",  # TODO(wizenheimer): make this configurable
+                    },
+                }
+                content.append(image_arg)
+
+        # Create the messages list with the proper structure
+        messages = [
+            {
+                "role": "user",
+                "content": content,
+            }
+        ]
+
+        # Update generation_property with the correct messages format
+        generation_properties["messages"] = messages
+
+        generation_properties["response_format"] = MarkdownModel
+
+        # Filter out unnecessary properties form generation properties
+        filtered_generation_property = {
+            k: v for k, v in generation_properties.items() if k in self.get_valid_completion_args()
+        }
+
+        # Perform completion and handle errors
+        response = self.client.beta.chat.completions.parse(**filtered_generation_property)
+
+        # Return results
+        if response.choices[0].message.refusal:
+            logger.error(f"Request refused: {response.choices[0].message.refusal}")
+            return None
+
+        return response.choices[0].message.parsed.model_dump().get("markdown")  # type: ignore
+
     def _generate_references(
         self,
     ) -> List[Dict[str, Any]]:
         # Get the task properties
-        directory = self._get_task_property(
+        directory = NestedDictAccessor.get_nested_value(
+            data=self.task_properties,
             key="directory",
             default=ParsingTask.DEFAULT_DIRECTORY,
         )
-        file_type = self._get_task_property(
+
+        file_type = NestedDictAccessor.get_nested_value(
+            data=self.task_properties,
             key="file_type",
             default=ParsingTask.DEFAULT_FILE_TYPE,
         )
-        max_depth = self._get_task_property(
+
+        max_depth = NestedDictAccessor.get_nested_value(
+            data=self.task_properties,
             key="max_depth",
             default=ParsingTask.DEFAULT_MAX_DEPTH,
         )

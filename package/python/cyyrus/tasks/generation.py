@@ -1,57 +1,27 @@
-import base64
 import copy
 import inspect
-import io
-import json
-import string
-import sys
 from functools import lru_cache
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Set
 
-import litellm
-from litellm import supports_vision  # type: ignore
+from openai import OpenAI
 
-from cyyrus.models.options import LargeLanguageModels
+from cyyrus.models.options import LargeLanguageModels, VisionLanguageModels
 from cyyrus.models.task_type import TaskType
+from cyyrus.models.types import DefaultModel
 from cyyrus.tasks.base import BaseTask
+from cyyrus.tasks.utils import Base64ImageFinder, GeneralUtils, NestedDictAccessor
 from cyyrus.utils.errors import error_handler
 from cyyrus.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-catch_all = error_handler(
+catch_all_return_none = error_handler(
     exceptions=Exception,  # This will catch all exceptions
     handler=None,
     logger=logger,
     retries=1,
     default_return=None,
 )
-
-
-class SuppressOutput:
-    def __init__(
-        self,
-    ):
-        self._stdout = None
-        self._stderr = None
-
-    def __enter__(
-        self,
-    ):
-        self._stdout = sys.stdout
-        self._stderr = sys.stderr
-        sys.stdout = io.StringIO()
-        sys.stderr = io.StringIO()
-        return self
-
-    def __exit__(
-        self,
-        exc_type,
-        exc_val,
-        exc_tb,
-    ):
-        sys.stdout = self._stdout
-        sys.stderr = self._stderr
 
 
 class GenerationTask(BaseTask):
@@ -62,12 +32,28 @@ class GenerationTask(BaseTask):
     DEFAULT_PROMPT = "Convert the corpus into a usable dataset"
     MAX_EPOCH = 100
 
+    @lru_cache
+    def get_valid_completion_args(self) -> Set[str]:
+        completion_params = inspect.signature(self.client.chat.completions.create).parameters
+        # Return a set of valid argument names
+        return set(completion_params.keys())
+
     def __init__(
         self,
         column_name: str,
         task_properties: Dict[str, Any],
     ) -> None:
-        super().__init__(column_name, task_properties)
+        super().__init__(
+            column_name,
+            task_properties,
+        )
+        api_key = NestedDictAccessor.get_nested_value(
+            task_properties,
+            "api_key",
+        )
+        self.client = OpenAI(
+            api_key=api_key,
+        )
 
     def execute(
         self,
@@ -77,95 +63,29 @@ class GenerationTask(BaseTask):
         Perform the generation task.
         """
         logger.debug(f"Executing generation task with {self.TASK_ID} ...")
+        return self.inference(task_input=task_input)
 
-        return ModelUtils.generation(
-            task_input=task_input,
-            task_property=self.task_properties,
+    @catch_all_return_none
+    def inference(self, task_input: Dict[str, Any]) -> Any:
+        # Get Prompt from Task Property
+        prompt = NestedDictAccessor.get_nested_value(
+            self.task_properties,
+            key="prompt",
+            default=GenerationTask.DEFAULT_PROMPT,
         )
 
-    def _generate_references(
-        self,
-    ) -> List[Dict[str, Any]]:
-        """
-        Attempt to generate the reference data for the task, using the task properties
-        """
-        max_epochs = self._get_task_property(
-            key="max_epochs",
-            default=GenerationTask.MAX_EPOCH,
-        )
-        # Attempt to generate the reference data
-        logger.debug(f"Generating references for task {self.TASK_ID} with {max_epochs} epochs ...")
-        return [{} for _ in range(max_epochs)]
-
-
-class ModelUtils:
-
-    @staticmethod
-    @lru_cache(maxsize=1)
-    def get_valid_completion_args():
-        # Inspect the litellm.completion function
-        completion_params = inspect.signature(litellm.completion).parameters
-        # Return a set of valid argument names
-        return set(completion_params.keys())
-
-    @staticmethod
-    def safe_format(
-        template: str | List[str],
-        **kwargs: Any,
-    ) -> str:
-        logger = logger = get_logger(__name__)
-        logger.debug("Attempting to format response with template")
-
-        if isinstance(template, list):
-            # If template is a list, join it into a single string
-            template = " ".join(template)
-
-        # Use a custom formatter to handle missing keys
-        class DefaultFormatter(string.Formatter):
-            def __init__(self, default=""):
-                self.default = default
-
-            def get_value(self, key, args, kwargs):
-                if isinstance(key, str):
-                    return kwargs.get(key, self.default)
-                else:
-                    return string.Formatter.get_value(key, args, kwargs)  # type: ignore
-
-        return DefaultFormatter().format(template, **kwargs)
-
-    @staticmethod
-    def log_completion_args(
-        completion_args: Dict[str, Any],
-    ):
-        logger.debug("logging completion arguments ...")
-        redacted_log_arguments = [
-            "api_key",
-        ]
-        for key, value in completion_args.items():
-            logger.debug(
-                f"{key}: {value}" if key not in redacted_log_arguments else f"{key}: <redacted>"
-            )
-
-    @staticmethod
-    @catch_all
-    def generation(
-        task_property: Dict[str, Any],
-        task_input: Dict[str, Any],
-    ) -> Any:
-        """
-        Process the model.
-        """
-        logger.debug("Processing generation task ...")
-
-        # Create a copy of the task property to avoid modifying the original
-        generation_property = copy.deepcopy(task_property)
-
-        # Converts the prompt into a formatted string of messages
-        prompt = generation_property.pop("prompt", "")
-        formatted_prompt = ModelUtils.safe_format(
+        # Process Prompt
+        formatted_prompt = GeneralUtils.populate_template(
             prompt,
-            **task_input,
+            self.task_properties | task_input,  # Merge task_properties and task_input
         )
+        logger.debug(f"Formatted Prompt: {formatted_prompt}")
+
+        # Pop prompt parameter
+        generation_properties = copy.deepcopy(self.task_properties)
+        generation_properties.pop("prompt", None)
+
+        # Format OpenAI Call
         content = [
             {
                 "type": "text",
@@ -173,22 +93,33 @@ class ModelUtils:
             }
         ]
 
-        model = generation_property.get(
+        # Generation Model
+        model = generation_properties.get(
             "model",
             LargeLanguageModels.GPT_4O_MINI,
         )
 
-        img_key = ModelUtils.find_multimodal_key(task_input)
-        if img_key and supports_vision(model=model):
-            base64_image = task_input.get(img_key)
-            image_arg = {
-                "type": "image_url",
-                "image_url": {
-                    "url": f"data:image/jpeg;base64,{base64_image}",
-                    "detail": "low",
-                },
-            }
-            content.append(image_arg)
+        # Incase model supports vision params
+        if GenerationTask.supports_vision(model=model):
+            # Find base64 encoded images in the task_input
+            img_keys = Base64ImageFinder.find_base64_encoded_keys(task_input=task_input)
+            logger.debug(f"Found {len(img_keys)} base64 images in task input ...")
+
+            for img_key in img_keys:
+                base64_image = NestedDictAccessor.get_nested_value(
+                    task_input,
+                    img_key,
+                    None,
+                )
+                if base64_image:
+                    image_arg = {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{base64_image}",  # TODO(wizenheimer): add support for other image types
+                            "detail": "low",  # TODO(wizenheimer): make this configurable
+                        },
+                    }
+                    content.append(image_arg)
 
         # Create the messages list with the proper structure
         messages = [
@@ -197,91 +128,56 @@ class ModelUtils:
                 "content": content,
             }
         ]
-        # Update generation_property with the correct messages format
-        generation_property["messages"] = messages
 
-        if generation_property.get("response_format", None) is None:
+        # Update generation_property with the correct messages format
+        generation_properties["messages"] = messages
+
+        # Check if structured prompting is supported
+        if generation_properties.get("response_format", None) is None:
             logger.debug("No response format specified, defaulting to unstructured text ...")
-            generation_property.pop("response_format", None)
+            generation_properties["response_format"] = DefaultModel
         else:
             logger.debug("Response format specified, attempting to process ...")
 
-        valid_args = ModelUtils.get_valid_completion_args()
-
+        # Filter out unnecessary properties form generation properties
         filtered_generation_property = {
-            k: v for k, v in generation_property.items() if k in valid_args
+            k: v for k, v in generation_properties.items() if k in self.get_valid_completion_args()
         }
-        ModelUtils.log_completion_args(filtered_generation_property)
 
-        # add conditional log suppression
-        with SuppressOutput():
-            response = litellm.completion(
-                **filtered_generation_property,
-            )
+        # Perform completion and handle errors
+        response = self.client.beta.chat.completions.parse(**filtered_generation_property)
 
-        result = response.choices[0].message.content  # type: ignore
+        # Return results
+        if response.choices[0].message.refusal:
+            logger.error(f"Request refused: {response.choices[0].message.refusal}")
+            return None
 
-        if "response_format" in generation_property.keys():
-            result = ModelUtils.safe_str_to_dict(result)
+        if generation_properties.get("response_format", None) == DefaultModel:
+            return response.choices[0].message.parsed.model_dump().get("value", None)  # type: ignore
 
-        return result
+        return response.choices[0].message.parsed.model_dump()  # type: ignore
+
+    def _generate_references(
+        self,
+    ) -> List[Dict[str, Any]]:
+        """
+        Attempt to generate the reference data for the task, using the task properties
+        """
+        max_epochs = NestedDictAccessor.get_nested_value(
+            self.task_properties,
+            "max_epochs",
+            GenerationTask.MAX_EPOCH,
+        )
+
+        # Attempt to generate the reference data
+        logger.debug(f"Generating references for task {self.TASK_ID} with {max_epochs} epochs ...")
+        return [{} for _ in range(max_epochs)]
 
     @staticmethod
-    def safe_str_to_dict(
-        input_data: Any,
-    ):
+    def supports_vision(
+        model: str,
+    ) -> bool:
         """
-        Safely convert a string to a dictionary if possible.
-        If input is already a dictionary, return it as is.
-        If conversion fails, return the original string.
-
-        Args:
-        input_data (Union[str, dict]): The input data to convert.
-
-        Returns:
-        Union[str, dict]: The converted dictionary or the original string.
+        Check if the model supports vision parameters.
         """
-        logger.debug("Attempting to convert string to dictionary ...")
-        if isinstance(input_data, dict):
-            return input_data
-
-        if isinstance(input_data, str):
-            try:
-                return json.loads(input_data)
-            except json.JSONDecodeError:
-                return input_data
-
-        return input_data  # Return as is for any other type
-
-    @staticmethod
-    def find_multimodal_key(
-        task_input: Dict[str, Any],
-    ):
-        logger.debug("Attempting to find multimodal key in task input ...")
-        for key, value in task_input.items():
-            if isinstance(value, str) and ModelUtils.is_base64_image(value):
-                return key
-        return None
-
-    @staticmethod
-    def is_base64_image(value: str) -> bool:
-        """
-        Check if a string is a base64 encoded image.
-        """
-        logger.debug("Checking if string is a base64 encoded image ...")
-        try:
-            # Attempt to decode the string
-            decoded = base64.b64decode(
-                value,
-            )
-            # Check for common image headers (you might want to expand this list)
-            return decoded.startswith(
-                (
-                    b"\xFF\xD8\xFF",
-                    b"\x89PNG\r\n\x1a\n",
-                    b"GIF87a",
-                    b"GIF89a",
-                )
-            )
-        except Exception as _:
-            return False
+        return model in VisionLanguageModels.__members__.values()

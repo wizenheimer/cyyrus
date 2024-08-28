@@ -36,3 +36,12 @@ class LargeLanguageModels(str, Enum):
 
     GPT_4 = "gpt-4"
     GPT_4O_MINI = "gpt-4o-mini"
+
+
+class VisionLanguageModels(str, Enum):
+    """
+    Enum for the different vision language models supported by the API.
+    """
+
+    GPT_4 = "gpt-4"
+    GPT_4O_MINI = "gpt-4o-mini"

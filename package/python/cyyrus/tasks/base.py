@@ -1,4 +1,3 @@
-import difflib
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
@@ -37,15 +36,9 @@ class BaseTask(ABC):
             task_input,
         )
 
-        if self._trigger_flattening():
-            return self._flatten_dict(
-                d=interim_result,
-                parent_key=self.column_name,
-            )
-        else:
-            return {
-                self.column_name: interim_result,
-            }
+        return {
+            self.column_name: interim_result,
+        }
 
     def reference_free_execution(
         self,
@@ -87,112 +80,3 @@ class BaseTask(ABC):
         Attempt to generate the reference data for the task, using the task properties
         """
         return []
-
-    # =====================================
-    #           Utility methods
-    # =====================================
-    @staticmethod
-    def _flatten_dict(
-        d: Dict[str, Any],
-        parent_key: str = "",
-        sep: str = "_",
-        max_depth: int = 5,
-    ) -> Dict[str, Any]:
-        """
-        Attempts to flatten the dictionary to a single level, by concatenating the keys with the separator. Upto the specified max_depth.
-        """
-        logger.debug(f"Attempting to flatten output with max_depth {max_depth} ...")
-        items = []
-        for k, v in d.items():
-            new_key = f"{parent_key}{sep}{k}" if parent_key else k
-            if isinstance(v, dict) and max_depth > 1:
-                items.extend(BaseTask._flatten_dict(v, new_key, sep, max_depth - 1).items())
-            else:
-                items.append((new_key, v))
-        return dict(items)
-
-    def _get_task_property(
-        self,
-        key: str,
-        default: Any = None,
-    ) -> Any:
-        """
-        The key used to extract the path from the task properties, incase the key is not found, the task will try to find the closest matching key
-        """
-        logger.debug(f"Fetching task property {key} ...")
-        if key in list(self.task_properties.keys()):
-            property_value = self.task_properties.get(
-                key,
-                default,
-            )
-        else:
-            logger.debug("Key not found, attempting to find closest match ...")
-            closest_key = self._find_closest_key(
-                list(self.task_properties.keys()),
-                key,
-            )
-            logger.debug(f"Closest key found: {closest_key}")
-            property_value = self.task_properties.get(
-                closest_key,
-                default,
-            )
-        return property_value
-
-    def _get_task_input(
-        self,
-        key: str,
-        task_input: Dict[str, Any],
-        default: Any = None,
-    ) -> Any:
-        """
-        The key used to extract the path from the task input, incase the key is not found, the task will try to find the closest matching key
-        """
-        logger.debug(f"Fetching task input {key} ...")
-        if key in list(task_input.keys()):
-            property_value = task_input.get(
-                key,
-                default,
-            )
-        else:
-            logger.debug("Key not found, attempting to find closest match ...")
-            closest_key = self._find_closest_key(
-                list(task_input.keys()),
-                key,
-            )
-
-            logger.debug(f"Closest key found: {closest_key}")
-            property_value = task_input.get(
-                closest_key,
-                default,
-            )
-        return property_value
-
-    def _find_closest_key(
-        self,
-        keys: List[str],
-        target: str,
-    ) -> str:
-        """
-        Find the closest matching key from the list of keys.
-        """
-        if not keys:
-            return ""
-        return max(
-            keys,
-            key=lambda k: difflib.SequenceMatcher(
-                None,
-                k,
-                target,
-            ).ratio(),
-        )
-
-    def _trigger_flattening(
-        self,
-    ) -> bool:
-        """
-        Check if the task should trigger flattening
-        """
-        return self.task_properties.get(
-            "flatten",
-            False,
-        )
