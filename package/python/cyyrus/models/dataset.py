@@ -154,6 +154,14 @@ class DatasetAttributes(BaseModel):
         pattern="^(include|exclude)$",
         description="How to handle null values",
     )
+    flatten_columns: List[str] = Field(
+        default=[],
+        description="Columns that should be flattened",
+    )
+    exclude_columns: List[str] = Field(
+        default=[],
+        description="Columns that should be excluded",
+    )
 
 
 class Dataset(BaseModel):
