@@ -65,8 +65,7 @@ packages = find_packages(
 
 setup(
     name="cyyrus",
-    description="...",
-    use_scm_version=True,
+    description="Transform Unstructured Data into Usable Datasets",
     author="wizenheimer",
     long_description=long_description,
     long_description_content_type="text/markdown",

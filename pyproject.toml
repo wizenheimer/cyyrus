@@ -1,8 +1,3 @@
-[project]
-name = "cyyrus"
-dynamic = ["description", "authors", "dependencies", "scripts", "version"]
-readme = "README.md"
-
 [tool.black]
 line-length = 100
 target-version = ['py38']
