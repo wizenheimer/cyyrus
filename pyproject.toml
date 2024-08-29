@@ -1,7 +1,6 @@
 [project]
 name = "cyyrus"
-version = "0.0.1"
-dynamic = ["description", "authors", "dependencies", "scripts"]
+dynamic = ["description", "authors", "dependencies", "scripts", "version"]
 readme = "README.md"
 
 [tool.black]
