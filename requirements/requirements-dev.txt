@@ -8,13 +8,9 @@ anyio==4.4.0 \
     --hash=sha256:5aadc6a1bbb7cdb0bede386cac5e2940f5e2ff3aa20277e991cf028e0585ce94 \
     --hash=sha256:c1b2d8f46a8a812513012e1107cb0e68c17159a7a594208005a57dc776e1bdc7
     # via
-    #   -c requirements/requirements.txt
+    #   -c requirements.txt
     #   httpx
     #   jupyter-server
-appnope==0.1.4 \
-    --hash=sha256:1de3860566df9caf38f01f86f65e0e13e379af54f9e4bee1e66b48f2efffd1ee \
-    --hash=sha256:502575ee11cd7a28c0205f379b525beefebab9d161b7c964670864014ed7213c
-    # via ipykernel
 argon2-cffi==23.1.0 \
     --hash=sha256:879c3e79a2729ce768ebb7d36d4609e3a78a4ca2ec3a9f12286ca057e3d0db08 \
     --hash=sha256:c670642b78ba29641818ab2e68bd4e6a78ba53b7eff7b4c3815ae16abf91c7ea
@@ -58,7 +54,7 @@ attrs==24.2.0 \
     --hash=sha256:5cfb1b9148b5b086569baec03f20d7b6bf3bcacc9a42bebf87ffaaca362f6346 \
     --hash=sha256:81921eb96de3191c8258c199618104dd27ac608d9366f5e35d011eae1867ede2
     # via
-    #   -c requirements/requirements.txt
+    #   -c requirements.txt
     #   jsonschema
     #   referencing
 babel==2.16.0 \
@@ -68,7 +64,7 @@ babel==2.16.0 \
 backports-tarfile==1.2.0 \
     --hash=sha256:77e284d754527b01fb1e6fa8a1afe577858ebe4e9dad8919e34c862cb399bc34 \
     --hash=sha256:d75e02c268746e1b8144c278978b6e98e85de6ad16f8e4b0844a154557eca991
-    # via -r requirements/requirements-dev.in
+    # via -r requirements-dev.in
 beautifulsoup4==4.12.3 \
     --hash=sha256:74e3d1928edc070d21748185c46e3fb33490f22f52a3addee9aee0f4f7781051 \
     --hash=sha256:b80878c9f40111313e55da8ba20bdba06d8fa3969fc68304167741bbf9e082ed
@@ -96,7 +92,7 @@ black==24.8.0 \
     --hash=sha256:eab4dd44ce80dea27dc69db40dab62d4ca96112f87996bca68cd75639aeb2e4c \
     --hash=sha256:f490dbd59680d809ca31efdae20e634f3fae27fba3ce0ba3208333b713bc3920 \
     --hash=sha256:fb6e2c0b86bbd43dee042e48059c9ad7830abd5c94b0bc518c0eeec57c3eddc1
-    # via -r requirements/requirements-dev.in
+    # via -r requirements-dev.in
 bleach==6.1.0 \
     --hash=sha256:0a31f1837963c41d46bbf1331b8778e1308ea0791db03cc4e7357b97cf42a8fe \
     --hash=sha256:3225f354cfc436b9789c66c4ee030194bee0568fbf9cbdad3bc8b5c26c5f12b6
@@ -104,12 +100,12 @@ bleach==6.1.0 \
 build==1.2.1 \
     --hash=sha256:526263f4870c26f26c433545579475377b2b7588b6f1eac76a001e873ae3e19d \
     --hash=sha256:75e10f767a433d9a86e50d83f418e83efc18ede923ee5ff7df93b6cb0306c5d4
-    # via -r requirements/requirements-dev.in
+    # via -r requirements-dev.in
 certifi==2024.7.4 \
     --hash=sha256:5a1e7645bc0ec61a09e26c36f6106dd4cf40c6db3a1fb6352b0244e7fb057c7b \
     --hash=sha256:c198e21b1289c2ab85ee4e67bb4b4ef3ead0892059901a8d5b622f24a1101e90
     # via
-    #   -c requirements/requirements.txt
+    #   -c requirements.txt
     #   httpcore
     #   httpx
     #   requests
@@ -181,7 +177,9 @@ cffi==1.17.0 \
     --hash=sha256:f3e0992f23bbb0be00a921eae5363329253c3b86287db27092461c887b791e5e \
     --hash=sha256:f9338cc05451f1942d0d8203ec2c346c830f8e86469903d5126c1f0a13a2bcbb \
     --hash=sha256:ffef8fd58a36fb5f1196919638f73dd3ae0db1a878982b27a9a5a176ede4ba91
-    # via argon2-cffi-bindings
+    # via
+    #   argon2-cffi-bindings
+    #   cryptography
 charset-normalizer==3.3.2 \
     --hash=sha256:06435b539f889b1f6f4ac1758871aae42dc3a8c0e24ac9e60c2384973ad73027 \
     --hash=sha256:06a81e93cd441c56a9b65d8e1d043daeb97a3d0856d177d5c90ba85acb3db087 \
@@ -274,18 +272,47 @@ charset-normalizer==3.3.2 \
     --hash=sha256:fd1abc0d89e30cc4e02e4064dc67fcc51bd941eb395c502aac3ec19fab46b519 \
     --hash=sha256:ff8fa367d09b717b2a17a052544193ad76cd49979c805768879cb63d9ca50561
     # via
-    #   -c requirements/requirements.txt
+    #   -c requirements.txt
     #   requests
 click==8.1.7 \
     --hash=sha256:ae74fb96c20a0277a1d615f1e4d73c8414f5a98db8b799a7931d1582f3390c28 \
     --hash=sha256:ca9853ad459e787e2192211578cc907e7594e294c7ccc834310722b41b9ca6de
     # via
-    #   -c requirements/requirements.txt
+    #   -c requirements.txt
     #   black
 comm==0.2.2 \
     --hash=sha256:3fd7a84065306e07bea1773df6eb8282de51ba82f77c72f9c85716ab11fe980e \
     --hash=sha256:e6fb86cb70ff661ee8c9c14e7d36d6de3b4066f1441be4063df9c5009f0a64d3
     # via ipykernel
+cryptography==43.0.0 \
+    --hash=sha256:0663585d02f76929792470451a5ba64424acc3cd5227b03921dab0e2f27b1709 \
+    --hash=sha256:08a24a7070b2b6804c1940ff0f910ff728932a9d0e80e7814234269f9d46d069 \
+    --hash=sha256:232ce02943a579095a339ac4b390fbbe97f5b5d5d107f8a08260ea2768be8cc2 \
+    --hash=sha256:2905ccf93a8a2a416f3ec01b1a7911c3fe4073ef35640e7ee5296754e30b762b \
+    --hash=sha256:299d3da8e00b7e2b54bb02ef58d73cd5f55fb31f33ebbf33bd00d9aa6807df7e \
+    --hash=sha256:2c6d112bf61c5ef44042c253e4859b3cbbb50df2f78fa8fae6747a7814484a70 \
+    --hash=sha256:31e44a986ceccec3d0498e16f3d27b2ee5fdf69ce2ab89b52eaad1d2f33d8778 \
+    --hash=sha256:3d9a1eca329405219b605fac09ecfc09ac09e595d6def650a437523fcd08dd22 \
+    --hash=sha256:3dcdedae5c7710b9f97ac6bba7e1052b95c7083c9d0e9df96e02a1932e777895 \
+    --hash=sha256:47ca71115e545954e6c1d207dd13461ab81f4eccfcb1345eac874828b5e3eaaf \
+    --hash=sha256:4a997df8c1c2aae1e1e5ac49c2e4f610ad037fc5a3aadc7b64e39dea42249431 \
+    --hash=sha256:51956cf8730665e2bdf8ddb8da0056f699c1a5715648c1b0144670c1ba00b48f \
+    --hash=sha256:5bcb8a5620008a8034d39bce21dc3e23735dfdb6a33a06974739bfa04f853947 \
+    --hash=sha256:64c3f16e2a4fc51c0d06af28441881f98c5d91009b8caaff40cf3548089e9c74 \
+    --hash=sha256:6e2b11c55d260d03a8cf29ac9b5e0608d35f08077d8c087be96287f43af3ccdc \
+    --hash=sha256:7b3f5fe74a5ca32d4d0f302ffe6680fcc5c28f8ef0dc0ae8f40c0f3a1b4fca66 \
+    --hash=sha256:844b6d608374e7d08f4f6e6f9f7b951f9256db41421917dfb2d003dde4cd6b66 \
+    --hash=sha256:9a8d6802e0825767476f62aafed40532bd435e8a5f7d23bd8b4f5fd04cc80ecf \
+    --hash=sha256:aae4d918f6b180a8ab8bf6511a419473d107df4dbb4225c7b48c5c9602c38c7f \
+    --hash=sha256:ac1955ce000cb29ab40def14fd1bbfa7af2017cca696ee696925615cafd0dce5 \
+    --hash=sha256:b88075ada2d51aa9f18283532c9f60e72170041bba88d7f37e49cbb10275299e \
+    --hash=sha256:cb013933d4c127349b3948aa8aaf2f12c0353ad0eccd715ca789c8a0f671646f \
+    --hash=sha256:cc70b4b581f28d0a254d006f26949245e3657d40d8857066c2ae22a61222ef55 \
+    --hash=sha256:e9c5266c432a1e23738d178e51c2c7a5e2ddf790f248be939448c0ba2021f9d1 \
+    --hash=sha256:ea9e57f8ea880eeea38ab5abf9fbe39f923544d7884228ec67d666abd60f5a47 \
+    --hash=sha256:ee0c405832ade84d4de74b9029bedb7b31200600fa524d218fc29bfa371e97f5 \
+    --hash=sha256:fdcb265de28585de5b859ae13e3846a8e805268a823a12a4da2597f1f5afc9f0
+    # via secretstorage
 debugpy==1.8.5 \
     --hash=sha256:0a1029a2869d01cb777216af8c53cda0476875ef02a2b6ff8b2f2c9a4b04176c \
     --hash=sha256:1cd04a73eb2769eb0bfe43f5bfde1215c5923d6924b9b90f94d15f207a402226 \
@@ -342,25 +369,25 @@ h11==0.14.0 \
     --hash=sha256:8f19fbbe99e72420ff35c00b27a34cb9937e902a8b810e2c88300c6f0a3b699d \
     --hash=sha256:e3fe4ac4b851c468cc8363d500db52c2ead036020723024a109d37346efaa761
     # via
-    #   -c requirements/requirements.txt
+    #   -c requirements.txt
     #   httpcore
 httpcore==1.0.5 \
     --hash=sha256:34a38e2f9291467ee3b44e89dd52615370e152954ba21721378a87b2960f7a61 \
     --hash=sha256:421f18bac248b25d310f3cacd198d55b8e6125c107797b609ff9b7a6ba7991b5
     # via
-    #   -c requirements/requirements.txt
+    #   -c requirements.txt
     #   httpx
 httpx==0.27.0 \
     --hash=sha256:71d5465162c13681bff01ad59b2cc68dd838ea1f10e51574bac27103f00c91a5 \
     --hash=sha256:a0cb88a46f32dc874e04ee956e4c2764aba2aa228f650b06788ba6bda2962ab5
     # via
-    #   -c requirements/requirements.txt
+    #   -c requirements.txt
     #   jupyterlab
 idna==3.7 \
     --hash=sha256:028ff3aadf0609c1fd278d8ea3089299412a7a8b9bd005dd08b9f8285bcb5cfc \
     --hash=sha256:82fee1fc78add43492d3a1898bfa6d8a904cc97d8427f683ed8e798d07761aa0
     # via
-    #   -c requirements/requirements.txt
+    #   -c requirements.txt
     #   anyio
     #   httpx
     #   jsonschema
@@ -401,6 +428,12 @@ jedi==0.19.1 \
     --hash=sha256:cf0496f3651bc65d7174ac1b7d043eff454892c708a87d1b683e57b569927ffd \
     --hash=sha256:e983c654fe5c02867aef4cdfce5a2fbb4a50adc0af145f70504238f18ef5e7e0
     # via ipython
+jeepney==0.8.0 \
+    --hash=sha256:5efe48d255973902f6badc3ce55e2aa6c5c3b3bc642059ef3a91247bcfcc5806 \
+    --hash=sha256:c0a454ad016ca575060802ee4d590dd912e35c122fa04e70306de3d076cce755
+    # via
+    #   keyring
+    #   secretstorage
 jinja2==3.1.4 \
     --hash=sha256:4a3aee7acbbe7303aede8e9648d13b8bf88a429282aa6122a993f0ac800cb369 \
     --hash=sha256:bc5dd2abb727a5319567b7a813e6a2e7318c39f4f487cfe6c89c6f9c7d25197d
@@ -494,7 +527,7 @@ markdown-it-py[linkify,plugins]==3.0.0 \
     --hash=sha256:355216845c60bd96232cd8d8c40e8f9765cc86f46880e43a8fd22dc1a1a8cab1 \
     --hash=sha256:e3f60a94fa066dc52ec76661e37c851cb232d92f9886b15cb560aaada2df8feb
     # via
-    #   -c requirements/requirements.txt
+    #   -c requirements.txt
     #   mdit-py-plugins
     #   rich
     #   textual
@@ -576,7 +609,7 @@ mdurl==0.1.2 \
     --hash=sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8 \
     --hash=sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba
     # via
-    #   -c requirements/requirements.txt
+    #   -c requirements.txt
     #   markdown-it-py
 memray==1.13.4 \
     --hash=sha256:2072a454846e055d5833d17b1f5e6106ae18e425974c3968276a1952b0156f2b \
@@ -616,7 +649,7 @@ memray==1.13.4 \
     --hash=sha256:f1f3ab803b703b9be29259039caf43803ad5abf37f04e77cd9e8373054dd91f6 \
     --hash=sha256:f43bfa96114012d76025a0ee42206c7d914b6113c491dc221e1b7a901c51242a \
     --hash=sha256:fcf71802b2c6d68c5336b1e4ae341eab64dcccd0dcf67687af53f18bc020237b
-    # via -r requirements/requirements-dev.in
+    # via -r requirements-dev.in
 mistune==3.0.2 \
     --hash=sha256:71481854c30fdbc938963d3605b72501f5c10a9320ecd412c121c163a1c7d205 \
     --hash=sha256:fc7f93ded930c92394ef2cb6f04a8aabab4117a91449e72dcc8dfa646a508be8
@@ -672,10 +705,10 @@ nodeenv==1.9.1 \
     --hash=sha256:6ec12890a2dab7946721edbfbcd91f3319c6ccc9aec47be7c7e6b7011ee6645f \
     --hash=sha256:ba11c9782d29c27c70ffbdda2d7415098754709be8a7056d79a737cd901155c9
     # via pyright
-notebook==7.2.1 \
-    --hash=sha256:4287b6da59740b32173d01d641f763d292f49c30e7a51b89c46ba8473126341e \
-    --hash=sha256:f45489a3995746f2195a137e0773e2130960b51c9ac3ce257dbc2705aab3a6ca
-    # via -r requirements/requirements-dev.in
+notebook==7.2.2 \
+    --hash=sha256:2ef07d4220421623ad3fe88118d687bc0450055570cdd160814a59cf3a1c516e \
+    --hash=sha256:c89264081f671bc02eec0ed470a627ed791b9156cad9285226b31611d3e9fe1c
+    # via -r requirements-dev.in
 notebook-shim==0.2.4 \
     --hash=sha256:411a5be4e9dc882a074ccbcae671eda64cceb068767e9a3419096986560e1cef \
     --hash=sha256:b4b2cfa1b65d98307ca24361f5b30fe785b53c3fd07b7a47e89acb5e6ac638cb
@@ -690,7 +723,7 @@ packaging==24.1 \
     --hash=sha256:026ed72c8ed3fcce5bf8950572258698927fd1dbda10a5e981cdf0ac37f4f002 \
     --hash=sha256:5b8f2217dbdbd2f7f384c41c628544e6d52f2d0f53c6d0c3ea61aa5d1d7ff124
     # via
-    #   -c requirements/requirements.txt
+    #   -c requirements.txt
     #   black
     #   build
     #   ipykernel
@@ -778,7 +811,7 @@ pygments==2.18.0 \
     --hash=sha256:786ff802f32e91311bff3889f6e9a86e81505fe99f2735bb6d60ae0c5004f199 \
     --hash=sha256:b8e6aca0523f3ab76fee51799c488e38782ac06eafcf95e7ba832985c8e7b13a
     # via
-    #   -c requirements/requirements.txt
+    #   -c requirements.txt
     #   ipython
     #   nbconvert
     #   readme-renderer
@@ -845,7 +878,7 @@ pyinstrument==4.7.2 \
     --hash=sha256:ef64820320ab78f0ce0992104cb7d343ffbb199c015f163fbdc2c66cb3215347 \
     --hash=sha256:fa1f4c0fd2cb118fea3e6d8ba5fcaa9b51c92344841935a7c2c4a8964647273e \
     --hash=sha256:fee18be41331fe0a016c315ea36da4ce965d1fdba051edad16823771e4a0c03d
-    # via -r requirements/requirements-dev.in
+    # via -r requirements-dev.in
 pyproject-hooks==1.1.0 \
     --hash=sha256:4b37730834edbd6bd37f26ece6b44802fb1c1ee2ece0e54ddff8bfc06db86965 \
     --hash=sha256:7ceeefe9aec63a1064c18d939bdc3adf2d8aa1988a510afec15151578b232aa2
@@ -853,33 +886,33 @@ pyproject-hooks==1.1.0 \
 pyright==1.1.239 \
     --hash=sha256:0d3929aba6f8add95a303fd2c008ea9a0d91e0f0b782c6cf5a2b41ffef023769 \
     --hash=sha256:a870792c6b194c98d096b58315ba781a2c994a328d3f6c38d1a7bcc61b9f215a
-    # via -r requirements/requirements-dev.in
+    # via -r requirements-dev.in
 pytest==8.3.2 \
     --hash=sha256:4ba08f9ae7dcf84ded419494d229b48d0903ea6407b030eaec46df5e6a73bba5 \
     --hash=sha256:c132345d12ce551242c87269de812483f5bcc87cdbb4722e48487ba194f9fdce
     # via
-    #   -r requirements/requirements-dev.in
+    #   -r requirements-dev.in
     #   pytest-clarity
     #   pytest-xdist
 pytest-clarity==1.0.1 \
     --hash=sha256:505fe345fad4fe11c6a4187fe683f2c7c52c077caa1e135f3e483fe112db7772
-    # via -r requirements/requirements-dev.in
+    # via -r requirements-dev.in
 pytest-xdist==3.6.1 \
     --hash=sha256:9ed4adfb68a016610848639bb7e02c9352d5d9f03d04809919e2dafc3be4cca7 \
     --hash=sha256:ead156a4db231eec769737f57668ef58a2084a34b2e55c4a8fa20d861107300d
-    # via -r requirements/requirements-dev.in
+    # via -r requirements-dev.in
 python-dateutil==2.9.0.post0 \
     --hash=sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3 \
     --hash=sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427
     # via
-    #   -c requirements/requirements.txt
+    #   -c requirements.txt
     #   arrow
     #   jupyter-client
 python-json-logger==2.0.7 \
     --hash=sha256:23e7ec02d34237c5aa1e29a070193a4ea87583bb4e7f8fd06d3de8264c4b2e1c \
     --hash=sha256:f380b826a991ebbe3de4d897aeec42760035ac760345e57b812938dc8b35e2bd
     # via
-    #   -c requirements/requirements.txt
+    #   -c requirements.txt
     #   jupyter-events
 pyyaml==6.0.2 \
     --hash=sha256:01179a4a8559ab5de078078f37e5c1a30d76bb88519906844fd7bdea1b7729ff \
@@ -936,7 +969,7 @@ pyyaml==6.0.2 \
     --hash=sha256:f753120cb8181e736c57ef7636e83f31b9c0d1722c516f7e86cf15b7aa57ff12 \
     --hash=sha256:ff3824dc5261f50c9b0dfb3be22b4567a6f938ccce4587b38952d85fd9e9afe4
     # via
-    #   -c requirements/requirements.txt
+    #   -c requirements.txt
     #   jupyter-events
 pyzmq==26.2.0 \
     --hash=sha256:007137c9ac9ad5ea21e6ad97d3489af654381324d5d3ba614c323f60dab8fae6 \
@@ -1067,7 +1100,7 @@ requests==2.32.3 \
     --hash=sha256:55365417734eb18255590a9ff9eb97e9e1da868d4ccd6402399eaf68af20a760 \
     --hash=sha256:70761cfe03c773ceb22aa2f671b4757976145175cdfca038c02654d061d6dcc6
     # via
-    #   -c requirements/requirements.txt
+    #   -c requirements.txt
     #   jupyterlab-server
     #   requests-toolbelt
     #   twine
@@ -1095,7 +1128,7 @@ rich==13.8.0 \
     --hash=sha256:2e85306a063b9492dffc86278197a60cbece75bcb766022f3436f567cae11bdc \
     --hash=sha256:a5ac1f1cd448ade0d59cc3356f7db7a7ccda2c8cbae9c7a90c28ff463d3e91f4
     # via
-    #   -c requirements/requirements.txt
+    #   -c requirements.txt
     #   memray
     #   pytest-clarity
     #   textual
@@ -1226,7 +1259,11 @@ ruff==0.5.7 \
     --hash=sha256:b88ca3db7eb377eb24fb7c82840546fb7acef75af4a74bd36e9ceb37a890257e \
     --hash=sha256:eaf3d86a1fdac1aec8a3417a63587d93f906c678bb9ed0b796da7b59c1114a1e \
     --hash=sha256:fcc8054f1a717e2213500edaddcf1dbb0abad40d98e1bd9d0ad364f75c763eea
-    # via -r requirements/requirements-dev.in
+    # via -r requirements-dev.in
+secretstorage==3.3.3 \
+    --hash=sha256:2403533ef369eca6d2ba81718576c5e0f564d5cca1b58f73a8b23e7d4eeebd77 \
+    --hash=sha256:f356e6628222568e3af06f2eba8df495efa13b3b63081dafd4f7d9a7b7bc9f99
+    # via keyring
 send2trash==1.8.3 \
     --hash=sha256:0c31227e0bd08961c7665474a3d1ef7193929fedda4233843689baa056be46c9 \
     --hash=sha256:b18e7a3966d99871aefeb00cfbcfdced55ce4871194810fc71f4aa484b953abf
@@ -1235,7 +1272,7 @@ six==1.16.0 \
     --hash=sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926 \
     --hash=sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254
     # via
-    #   -c requirements/requirements.txt
+    #   -c requirements.txt
     #   asttokens
     #   bleach
     #   python-dateutil
@@ -1244,7 +1281,7 @@ sniffio==1.3.1 \
     --hash=sha256:2f6da418d1f1e0fddd844478f41680e794e6051915791a034ff65e5f100525a2 \
     --hash=sha256:f4324edc670a0f49750a81b895f35c3adb843cca46f0530f79fc1babb23789dc
     # via
-    #   -c requirements/requirements.txt
+    #   -c requirements.txt
     #   anyio
     #   httpx
 soupsieve==2.6 \
@@ -1307,7 +1344,7 @@ traitlets==5.14.3 \
 twine==5.1.1 \
     --hash=sha256:215dbe7b4b94c2c50a7315c0275d2258399280fbb7d04182c7e55e24b5f93997 \
     --hash=sha256:9aa0825139c02b3434d913545c7b847a21c835e11597f5255842d457da2322db
-    # via -r requirements/requirements-dev.in
+    # via -r requirements-dev.in
 types-python-dateutil==2.9.0.20240821 \
     --hash=sha256:9649d1dcb6fef1046fb18bebe9ea2aa0028b160918518c34589a46045f6ebd98 \
     --hash=sha256:f5889fcb4e63ed4aaa379b44f93c32593d50b9a94c9a60a0c854d8cc3511cd57
@@ -1316,7 +1353,7 @@ typing-extensions==4.12.2 \
     --hash=sha256:04e5ca0351e0f3f85c6853954072df659d0d13fac324d0072316b67d7794700d \
     --hash=sha256:1a7ead55c7e559dd4dee8856e3a88b41225abfe1ce8df57b7c13915fe121ffb8
     # via
-    #   -c requirements/requirements.txt
+    #   -c requirements.txt
     #   textual
 uc-micro-py==1.0.3 \
     --hash=sha256:d321b92cff673ec58027c04015fcaa8bb1e005478643ff4a500882eaab88c48a \
@@ -1330,7 +1367,7 @@ urllib3==2.2.2 \
     --hash=sha256:a448b2f64d686155468037e1ace9f2d2199776e17f0a46610480d311f73e3472 \
     --hash=sha256:dd505485549a7a552833da5e6063639d0d177c04f23bc3864e41e5dc5f612168
     # via
-    #   -c requirements/requirements.txt
+    #   -c requirements.txt
     #   requests
     #   twine
 wcwidth==0.2.13 \
@@ -1361,5 +1398,5 @@ setuptools==72.2.0 \
     --hash=sha256:80aacbf633704e9c8bfa1d99fa5dd4dc59573efcf9e4042c13d3bcef91ac2ef9 \
     --hash=sha256:f11dd94b7bae3a156a95ec151f24e4637fb4fa19c878e4d191bfb8b2d82728c4
     # via
-    #   -r requirements/requirements-dev.in
+    #   -r requirements-dev.in
     #   jupyterlab
