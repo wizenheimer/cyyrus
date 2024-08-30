@@ -67,7 +67,7 @@ setup(
     name="cyyrus",
     description="Transform Unstructured Data into Usable Datasets",
     author="wizenheimer",
-    version="0.11.0",
+    version="0.12.0",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author_email="cyyruslabs@gmail.com",
