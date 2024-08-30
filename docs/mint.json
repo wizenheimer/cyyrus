@@ -52,10 +52,10 @@
         {
             "group": "Overview",
             "pages": [
-                "Introduction",
-                "overview/Contributing",
-                "overview/Roadmap",
-                "overview/CLI"
+                "introduction",
+                "overview/contributing",
+                "overview/roadmap",
+                "overview/cli"
             ]
         },
         {
@@ -64,19 +64,19 @@
                 {
                     "group": "Library",
                     "pages": [
-                        "quickstart/library/Installation",
-                        "quickstart/library/Configuration",
-                        "quickstart/library/Generation",
-                        "quickstart/library/Publishing"
+                        "quickstart/library/installation",
+                        "quickstart/library/configuration",
+                        "quickstart/library/generation",
+                        "quickstart/library/publishing"
                     ]
                 },
                 {
                     "group": "Components",
                     "pages": [
-                        "quickstart/components/Installation",
-                        "quickstart/components/Configuration",
-                        "quickstart/components/Generation",
-                        "quickstart/components/Publishing"
+                        "quickstart/components/installation",
+                        "quickstart/components/configuration",
+                        "quickstart/components/generation",
+                        "quickstart/components/publishing"
                     ]
                 }
             ]
@@ -84,20 +84,45 @@
         {
             "group": "Concepts",
             "pages": [
-                "concepts/Tasks",
-                "concepts/Types",
-                "concepts/Datasets",
-                "concepts/Columns"
+                "concepts/tasks",
+                "concepts/types",
+                "concepts/datasets",
+                "concepts/columns"
+            ]
+        },
+        {
+            "group": "Schema",
+            "pages": [
+                "schema/overview",
+                "schema/version",
+                "schema/tasks",
+                {
+                    "group": "Columns",
+                    "pages": [
+                        "schema/columns/overview",
+                        "schema/columns/task-id",
+                        "schema/columns/task-inputs"
+                    ]
+                },
+                {
+                    "group": "Types",
+                    "pages": [
+                        "schema/types/overview",
+                        "schema/types/primitives",
+                        "schema/types/objects",
+                        "schema/types/arrays"
+                    ]
+                }
             ]
         },
         {
             "group": "Tasks",
             "pages": [
-                "tasks/Extraction",
-                "tasks/Generation",
-                "tasks/Labelling",
-                "tasks/Parsing",
-                "tasks/Scraping"
+                "tasks/extraction",
+                "tasks/generation",
+                "tasks/labelling",
+                "tasks/parsing",
+                "tasks/scraping"
             ]
         },
         {
@@ -106,38 +131,38 @@
                 {
                     "group": "Image",
                     "pages": [
-                        "guides/Image/Captioning",
-                        "guides/Image/Classification",
-                        "guides/Image/Embedding",
-                        "guides/Image/Dense_Region_Captioning",
-                        "guides/Image/Graph_Parsing",
-                        "guides/Image/Object_Detection",
-                        "guides/Image/Optical_Character_Recognition"
+                        "guides/image/captioning",
+                        "guides/image/classification",
+                        "guides/image/embedding",
+                        "guides/image/dense-region-captioning",
+                        "guides/image/graph-parsing",
+                        "guides/image/object-detection",
+                        "guides/image/optical-character-recognition"
                     ]
                 },
                 {
                     "group": "Text",
                     "pages": [
-                        "guides/Text/Finetuning",
-                        "guides/Text/Document_Parsing",
-                        "guides/Text/Embedding",
-                        "guides/Text/Evaluation",
-                        "guides/Text/Seq2Seq"
+                        "guides/text/finetuning",
+                        "guides/text/document-parsing",
+                        "guides/text/embedding",
+                        "guides/text/evaluation",
+                        "guides/text/seq2seq"
                     ]
                 },
                 {
                     "group": "Audio",
                     "pages": [
-                        "guides/Audio/Diarization",
-                        "guides/Audio/Transcription"
+                        "guides/audio/diarization",
+                        "guides/audio/transcription"
                     ]
                 },
                 {
                     "group": "Video",
                     "pages": [
-                        "guides/Video/Audio_Extraction",
-                        "guides/Video/Face_Extraction",
-                        "guides/Video/Key_Frame_Extraction"
+                        "guides/video/audio-extraction",
+                        "guides/video/face-extraction",
+                        "guides/video/key-frame-extraction"
                     ]
                 }
             ]
@@ -148,52 +173,52 @@
                 {
                     "group": "Tasks",
                     "pages": [
-                        "glossary/Tasks/Reference_Based",
-                        "glossary/Tasks/Reference_Free"
+                        "glossary/tasks/reference-based",
+                        "glossary/tasks/reference-free"
                     ]
                 },
                 {
                     "group": "Image",
                     "pages": [
-                        "glossary/Image/Captioning",
-                        "glossary/Image/Classification",
-                        "glossary/Image/Embedding",
-                        "glossary/Image/Dense_Region_Captioning",
-                        "glossary/Image/Graph_Parsing",
-                        "glossary/Image/Object_Detection",
-                        "glossary/Image/Optical_Character_Recognition"
+                        "glossary/image/captioning",
+                        "glossary/image/classification",
+                        "glossary/image/embedding",
+                        "glossary/image/dense-region-captioning",
+                        "glossary/image/graph-parsing",
+                        "glossary/image/object-detection",
+                        "glossary/image/optical-character-recognition"
                     ]
                 },
                 {
                     "group": "Text",
                     "pages": [
-                        "glossary/Text/Finetuning",
-                        "glossary/Text/Document_Parsing",
-                        "glossary/Text/Embedding",
-                        "glossary/Text/Evaluation",
-                        "glossary/Text/Seq2Seq"
+                        "glossary/text/finetuning",
+                        "glossary/text/document-parsing",
+                        "glossary/text/embedding",
+                        "glossary/text/evaluation",
+                        "glossary/text/seq2seq"
                     ]
                 },
                 {
                     "group": "Audio",
                     "pages": [
-                        "glossary/Audio/Diarization",
-                        "glossary/Audio/Transcription"
+                        "glossary/audio/diarization",
+                        "glossary/audio/transcription"
                     ]
                 },
                 {
                     "group": "Video",
                     "pages": [
-                        "glossary/Video/Audio_Extraction",
-                        "glossary/Video/Face_Extraction",
-                        "glossary/Video/Key_Frame_Extraction"
+                        "glossary/video/audio-extraction",
+                        "glossary/video/face-extraction",
+                        "glossary/video/key-frame-extraction"
                     ]
                 },
                 {
                     "group": "Datasets",
                     "pages": [
-                        "glossary/Datasets/Huggingface",
-                        "glossary/Datasets/Local"
+                        "glossary/datasets/huggingface",
+                        "glossary/datasets/local"
                     ]
                 }
             ]
