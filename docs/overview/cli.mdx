@@ -1,7 +1,130 @@
 ---
 title: 'CLI'
 sidebarTitle: 'CLI'
-description: Here's how you can use the Cyyrus CLI.
+description: There's a new sheriff in town. And it's called the CLI.
 icon: 'code'
 ---
 
+Cyyrus comes with a powerful CLI that lets you interact with the system from the comfort of your terminal. The CLI is your go-to tool for generating data, managing schemas, and publishing datasets. It's like a sidekick, always there to lend a hand.
+
+## `cyyrus run`
+
+Generate the dataset as per the schema and optionally export the data or upload it to Hugging Face.
+
+### Options
+
+<ResponseField name="--log-level" type="string" default="INFO">
+  Set the logging level. Choices: DEBUG, INFO, WARNING, ERROR, CRITICAL.
+</ResponseField>
+
+<ResponseField name="--human-readable" type="boolean" default="True">
+  Use human-readable log format.
+</ResponseField>
+
+<ResponseField name="--log-file" type="string" default="cyyrus.log">
+  Name of the log file.
+</ResponseField>
+
+<ResponseField name="--log-dir" type="string">
+  Directory to store log files.
+</ResponseField>
+
+<ResponseField name="--schema-path" type="string" required>
+  Path to the schema file.
+</ResponseField>
+
+<ResponseField name="--env-path" type="string">
+  Path to the optional environment file.
+</ResponseField>
+
+<ResponseField name="--export-format" type="string">
+  Format to export the dataset.
+</ResponseField>
+
+<ResponseField name="--export-path" type="string">
+  Directory to export the dataset.
+</ResponseField>
+
+<ResponseField name="--huggingface-token" type="string">
+  Hugging Face token for authentication.
+</ResponseField>
+
+<ResponseField name="--repo-id" type="string">
+  Hugging Face repo ID for dataset upload.
+</ResponseField>
+
+### Usage
+
+```bash
+cyyrus run --schema-path /path/to/schema.yaml [OPTIONS]
+```
+
+### Examples
+
+1. Basic usage with default options:
+   ```bash
+   cyyrus run --schema-path ./schema.yaml
+   ```
+
+2. Changing log level and log file:
+   ```bash
+   cyyrus run --schema-path ./schema.yaml --log-level DEBUG --log-file debug.log
+   ```
+
+3. Exporting data to a specific format and location:
+   ```bash
+   cyyrus run --schema-path ./schema.yaml --export-format json --export-path ./output
+   ```
+
+4. Using an environment file and uploading to Hugging Face:
+   ```bash
+   cyyrus run --schema-path ./schema.yaml --env-path .env --huggingface-token YOUR_TOKEN --repo-id your-username/your-dataset
+   ```
+
+### FAQ
+
+<AccordionGroup>
+  <Accordion title="How do I set up logging for Cyyrus?">
+    Cyyrus provides flexible logging options. You can set the log level using the `--log-level` option, choose between human-readable and machine-readable formats with `--human-readable`, specify a log file name with `--log-file`, and set a custom directory for log files using `--log-dir`.
+
+    For example:
+    ```bash
+    cyyrus run --schema-path ./schema.yaml --log-level DEBUG --log-file cyyrus_debug.log --log-dir ./logs
+    ```
+    This command will run Cyyrus with DEBUG level logging, output to a file named `cyyrus_debug.log` in the `./logs` directory.
+  </Accordion>
+
+  <Accordion title="How can I export my processed data?">
+    Cyyrus allows you to export your processed data using the `--export-format` and `--export-path` options. The `--export-format` option determines the format of your exported data, while `--export-path` specifies where the exported data should be saved.
+
+    For instance:
+    ```bash
+    cyyrus run --schema-path ./schema.yaml --export-format csv --export-path ./exported_data
+    ```
+    This will process your data according to the schema and export it in CSV format to the `./exported_data` directory.
+  </Accordion>
+
+  <Accordion title="Can I upload my dataset directly to Hugging Face?">
+    Yes, Cyyrus supports direct uploads to Hugging Face. To do this, you need to provide your Hugging Face token and the repository ID where you want to upload the dataset.
+
+    Use the `--huggingface-token` option to provide your authentication token, and `--repo-id` to specify the target repository.
+
+    For example:
+    ```bash
+    cyyrus run --schema-path ./schema.yaml --huggingface-token hf_xxx --repo-id username/dataset-name
+    ```
+    This command will process your data and then upload it to the specified Hugging Face repository.
+  </Accordion>
+</AccordionGroup>
+
+## `cyyrus init`
+
+Creates a new schema file with the specified name.
+
+<Note>In development now. We'd love to hear if this is important to you.</Note>
+
+## `cyyrus validate`
+
+Validate an existing schema file for correctness.
+
+<Note>In development now. We'd love to hear if this is important to you.</Note>
