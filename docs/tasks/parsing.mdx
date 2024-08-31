@@ -3,10 +3,63 @@ title: Parsing
 description: Unf*ck unstructured data. Nothing more, nothing less.
 icon: 'person-snowboarding'
 ---
-<Note>Planned for future release. Eager to have it sooner? We're always listening. Let us know.</Note>
 
 <img
   src="/images/parsing-task.png"
   alt="Parsing Task"
 />
 
+## Parsing Task Properties
+
+### Required Properties
+
+<ResponseField name="parsed_format" type="string" default="base64">
+  The format of the parsed output.
+
+  Allowed values:
+  - `"base64"`: Base64 encoded output
+  - `"markdown"`: Markdown formatted output
+  - `"image"`: Image output
+
+  When the `parsed_format` is set to `markdown`, make sure to set `model` and `api_key` properties.
+
+  Checkout the [Generation Task](/tasks/generation.mdx) for more parameters.
+
+</ResponseField>
+
+<ResponseField name="file_type" type="string" default="pdf">
+  The format of the input file.
+
+  Allowed values:
+  - `"pdf"`: PDF files
+  - `"png"`: PNG images
+  - `"jpeg"`: JPEG images
+  - `"jpg"`: JPG images
+</ResponseField>
+
+### Optional Properties
+
+<ResponseField name="max_depth" type="integer" default="5">
+  Maximum depth for parsing nested structures.
+</ResponseField>
+
+<ResponseField name="directory" type="string" default="*">
+  Directory to search for files to parse.
+</ResponseField>
+
+## Usage Examples
+
+<CodeGroup>
+```YAML Parsing Task
+tasks:
+    parse_graphs:
+        task_type: parsing
+        task_properties:
+            parsed_format: markdown
+            file_type: pdf
+            max_depth: 3
+            directory: ./documents
+```
+</CodeGroup>
+
+<Note>It's currently work in progress. If there something else you'd like to see, we'd love to know.</Note>

@@ -8,3 +8,52 @@ icon: 'hammer'
   src="/images/types-overview.png"
   alt="Types"
 />
+
+## What are Types?
+
+Types are like blueprints for your data. They define the structure of your data and how it can be interacted with.
+
+Types are used to define the shape of the data that will be generated. They define the properties of the data, such as the data type, format, and constraints.
+
+Once outlined they tell Cyyrus, "Hey, this chunk of info is a string of text" or "This bit here? It's a number." and so on. Without types, your data would be a mess of random bits.
+
+
+<CodeGroup>
+```YAML Primitive Types
+types:
+    question:
+        type: string  # For when you need to ask the important questions
+    answer:
+        type: string  # For when you think you know everything
+    relevance:
+        type: float   # Because sometimes, things are only kinda relevant
+    count:
+        type: integer  # For counting things, like how many model weights you own
+    is_deleted:
+        type: boolean  # Schrödinger's data: deleted and not deleted at the same time
+```
+```YAML Object Type
+customer_info:
+    type: object
+    properties:
+      customer_name:
+        type: string  # What do we call this meat popsicle?
+      customer_address:
+        type: string  # Where do they park their meat vehicle?
+      invoice_id:
+        type: string  # The unique identifier for their financial pain
+      total_amount:
+        type: float   # How much do they owe us for our digital crack?
+```
+```YAML Array Type
+invoice_qna:
+    type: array
+    items:
+      type: object
+      properties:
+        question:
+          type: string  # The burning questions about their invoice
+        answer:
+          type: string  # Our attempts to explain why they owe us money
+```
+</CodeGroup>

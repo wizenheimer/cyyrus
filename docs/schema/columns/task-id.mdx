@@ -4,3 +4,17 @@ sidebarTitle: 'Task ID'
 description: Task ID is a unique identifier for a task. Think of it as a primary key.
 icon: 'id-card-clip'
 ---
+
+Task IDs serve as unique identifiers for tasks, allowing you to reference and manage them across your pipeline.
+
+1. Each task ID must be `unique`. Because why have two tasks with the same ID?
+2. Task IDs are `case-sensitive`. This means that `ProcessInvoice` and `processinvoice` are treated as two distinct identifiers.
+3. Task IDs act as `references` for the system to correctly identify and execute specific tasks. They are used in task inputs, dependency management, and workflow orchestration.
+
+To keep things manageable, here's a quick tip: use descriptive and meaningful task IDs. This practice will help you quickly identify tasks and understand their purpose within your pipeline.
+
+1. **Uniqueness**: Ensure each task ID is unique to prevent conflicts and ambiguity.
+2. **Descriptiveness**: Choose IDs that clearly describe the task's function. This aids in understanding the workflow at a glance.
+3. **Consistency**: Adopt a consistent naming convention across your workflow. This could involve using camel case, snake case, or something else.
+4. **Case Sensitivity Awareness**: Be mindful of case sensitivity when referencing task IDs throughout your workflow configuration.
+5. **Avoid Generic Names**: Steer clear of overly generic names like "task_1" or "process_data". Opt for more specific identifiers that indicate the task's purpose.

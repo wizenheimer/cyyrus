@@ -40,7 +40,7 @@
         {
             "name": "Examples",
             "icon": "scroll",
-            "url": "https://github.com/wizenheimer/cyyrus"
+            "url": "https://github.com/wizenheimer/cyyrus/examples"
         },
         {
             "name": "Spaces",
@@ -54,8 +54,7 @@
             "pages": [
                 "introduction",
                 "overview/contributing",
-                "overview/roadmap",
-                "overview/cli"
+                "overview/roadmap"
             ]
         },
         {
@@ -63,6 +62,7 @@
             "pages": [
                 {
                     "group": "Library",
+                    "icon": "github-alt",
                     "pages": [
                         "quickstart/library/installation",
                         "quickstart/library/configuration",
@@ -72,13 +72,15 @@
                 },
                 {
                     "group": "Components",
+                    "icon": "uikit",
                     "pages": [
                         "quickstart/components/installation",
                         "quickstart/components/configuration",
                         "quickstart/components/generation",
                         "quickstart/components/publishing"
                     ]
-                }
+                },
+                "overview/cli"
             ]
         },
         {
@@ -98,6 +100,7 @@
                 "schema/tasks",
                 {
                     "group": "Columns",
+                    "icon": "file",
                     "pages": [
                         "schema/columns/overview",
                         "schema/columns/task-id",
@@ -106,6 +109,7 @@
                 },
                 {
                     "group": "Types",
+                    "icon": "square-check",
                     "pages": [
                         "schema/types/overview",
                         "schema/types/primitives",
@@ -118,36 +122,36 @@
         {
             "group": "Tasks",
             "pages": [
-                "tasks/extraction",
-                "tasks/generation",
-                "tasks/labelling",
                 "tasks/parsing",
-                "tasks/scraping"
+                "tasks/generation",
+                "tasks/extraction",
+                "tasks/scraping",
+                "tasks/labelling"
             ]
         },
         {
             "group": "Guides",
             "pages": [
                 {
+                    "group": "Text",
+                    "pages": [
+                        "guides/text/document-parsing",
+                        "guides/text/finetuning",
+                        "guides/text/embedding",
+                        "guides/text/evaluation",
+                        "guides/text/seq2seq"
+                    ]
+                },
+                {
                     "group": "Image",
                     "pages": [
+                        "guides/image/graph-parsing",
+                        "guides/image/optical-character-recognition",
                         "guides/image/captioning",
                         "guides/image/classification",
                         "guides/image/embedding",
                         "guides/image/dense-region-captioning",
-                        "guides/image/graph-parsing",
-                        "guides/image/object-detection",
-                        "guides/image/optical-character-recognition"
-                    ]
-                },
-                {
-                    "group": "Text",
-                    "pages": [
-                        "guides/text/finetuning",
-                        "guides/text/document-parsing",
-                        "guides/text/embedding",
-                        "guides/text/evaluation",
-                        "guides/text/seq2seq"
+                        "guides/image/object-detection"
                     ]
                 },
                 {
