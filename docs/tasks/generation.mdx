@@ -4,9 +4,114 @@ description: Tap into latent space of Language Models to generate data. And more
 icon: 'robot'
 ---
 
-<Note>Work in progress. Is this a must-have for you? We'd love to know.</Note>
 
 <img
   src="/images/generation-task.png"
   alt="Generation Task"
 />
+
+## Generation Task Properties
+
+### Required Properties
+
+<ResponseField name="prompt" type="string">
+  The input prompt for generation.
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  The model to use for generation.
+
+  Allowed values:
+  - `"gpt-4"`: GPT-4 model
+  - `"gpt-4o-mini"`: GPT-4O Mini model
+</ResponseField>
+
+<ResponseField name="api_key" type="string">
+  API key for authentication.
+</ResponseField>
+
+### Optional Properties
+
+<ResponseField name="max_epochs" type="integer" default="100">
+  Maximum number of epochs for reference free generation.
+</ResponseField>
+
+<ResponseField name="response_format" type="string">
+  Desired format of the response. Reference the `type_id` present in the `types` section of the schema.
+</ResponseField>
+
+### OpenAI API Properties
+
+In addition to the above properties, the generation task supports all OpenAI API call properties. Some commonly used properties include:
+
+<ResponseField name="temperature" type="float">
+  Controls randomness in output (0.0 to 2.0).
+</ResponseField>
+
+<ResponseField name="max_tokens" type="integer">
+  Maximum number of tokens to generate.
+</ResponseField>
+
+<ResponseField name="top_p" type="float">
+  Controls diversity via nucleus sampling.
+</ResponseField>
+
+<ResponseField name="frequency_penalty" type="float">
+  Reduces repetition of token sequences.
+</ResponseField>
+
+<ResponseField name="presence_penalty" type="float">
+  Encourages the model to talk about new topics.
+</ResponseField>
+
+<ResponseField name="stop" type="string or array">
+  Sequences where the API will stop generating further tokens.
+</ResponseField>
+
+<Note>
+For a complete list of OpenAI API properties, please refer to the [OpenAI API documentation](https://platform.openai.com/docs/api-reference/completions/create).
+</Note>
+
+## Usage Examples
+
+<CodeGroup>
+```YAML Typed Generation
+types:
+    customer_info: # This gets referenced in the response_format field
+        type: object
+        properties:
+        customer_name:
+            type: string
+        customer_address:
+            type: string
+tasks:
+    extract_customer_info:
+        task_type: generation
+        task_properties:
+        model: gpt-4o-mini
+        prompt: Extract customer info from the given invoice
+        response_format: customer_info # Specify the response format, if needed
+        api_key: $OPENAI_API_KEY
+```
+```YAML Untyped Generation
+tasks:
+    generate_insights:
+        task_type: generation
+        task_properties:
+        model: gpt-4o-mini
+        prompt: Summarize the insights from the given data
+        api_key: $OPENAI_API_KEY
+```
+```YAML Reference free Generation
+tasks:
+    generate_reviews:
+        task_type: generation
+        task_properties:
+        model: gpt-4o-mini
+        prompt: Create a mix of positive and negative movie reviews
+        api_key: $OPENAI_API_KEY
+        max_epochs: 50 # Specify the maximum number of epochs in case of reference free generation, this puts an upper limit on the number of generations
+```
+</CodeGroup>
+
+<Note>It's currently work in progress. If there something else you'd like to see, we'd love to know.</Note>
