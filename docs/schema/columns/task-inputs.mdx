@@ -8,3 +8,60 @@ icon: 'bars-progress'
   src="/images/level-order-traversal.png"
   alt="Level Order Traversal"
 />
+
+## Understanding Task Inputs
+
+Task inputs are a crucial component in defining the structure and flow of data processing pipelines. They serve two primary functions:
+
+1. Specifying the data requirements for each task
+2. Establishing the order of task execution
+
+The `task_inputs` field is used to define these relationships, effectively creating a `Directed Acyclic Graph` (DAG) of task dependencies. This `DAG` ensures that tasks are executed in the correct order, with each task receiving its required inputs only after they have been produced by preceding tasks.
+
+### Key Characteristics of the Task Input DAG:
+
+- **Directed**: Relationships between tasks have a specific direction, from `input` to `output`.
+- **Acyclic**: The `graph` does not contain cycles, preventing infinite loops in task execution. That's fancy way to say "we make sure your data doesn't end up chasing its own tail."
+- **Graph**: Tasks and their dependencies form a `network` structure.
+
+```yaml
+# Example of Task Inputs Forming a DAG
+
+columns:
+    parsed_invoice:
+        task_id: invoice_parsing
+
+    customer_info:
+        task_id: extract_customer_info
+        task_input: [parsed_invoice]
+
+    invoice_items:
+        task_id: extract_invoice_items
+        task_input: [parsed_invoice]
+
+    invoice_qna:
+        task_id: create_invoice_qna
+        task_input: [invoice_items, customer_info]
+```
+
+In this example, we can observe the DAG structure:
+
+1. `invoice_parsing` is the root node, with no dependencies.
+2. `extract_customer_info` and `extract_invoice_items` both depend on `parsed_invoice`.
+3. `create_invoice_qna` depends on both `invoice_items` and `customer_info`.
+
+This structure ensures that:
+
+- Tasks are executed in the correct order
+- Each task has access to its required inputs
+- Parallel execution is possible for independent tasks
+
+### Validation and Execution
+
+The system performs validation on the task input definitions to ensure the DAG's integrity:
+
+1. **Cyclic Dependency Check**: Verifies that no cycles exist in the task dependencies.
+2. **Existence Check**: Confirms that all referenced inputs are defined.
+3. **Type Consistency**: Ensures that input and output data types are compatible.
+
+During execution, the DAG is traversed to determine the optimal order of task execution, potentially allowing for parallel processing of independent task branches. As tasks complete, their outputs are stored and made available to downstream tasks.

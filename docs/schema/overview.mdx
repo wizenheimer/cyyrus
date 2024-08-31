@@ -8,3 +8,161 @@ icon: 'sitemap'
   src="/images/schema-overview.png"
   alt="Schema Overview"
 />
+
+In Cyyrus, the schema is the heart of the dataset generation process. It defines the structure, properties, and types of the dataset. The schema is written in YAML and is used to generate synthetic data that adheres to the specified structure.
+
+<Steps>
+  <Step title="Define Your Tasks">
+    First step is to define the tasks that will be used in the dataset generation process. These tasks can include parsing, extraction, or something else.
+    <CodeGroup>
+    ```YAML Generation
+    tasks:
+        # Define the Graph QA Task
+        parse_graphs:
+            task_type: generation # Define the type of task
+            task_properties: # Incase the task requires any properties define them here
+            model: gpt-4o-mini
+            prompt: What are the insights from the graph
+            api_key: $OPENAI_API_KEY
+    ```
+    ```YAML Parsing
+    tasks:
+        # Define the Invoice Parsing Task
+        invoice_parsing:
+            task_type: parsing
+            task_properties:
+            directory: experimental/sample
+            file_type: pdf
+            max_depth: 5
+            parsed_format: base64
+    ```
+    </CodeGroup>
+  </Step>
+  <Step title="Define Your Types">
+    Once the tasks are defined, the next step is to define the types that will be used in the dataset. These types can include objects, arrays, or any other data type.
+    <CodeGroup>
+    ```YAML Primitive Types
+    # Define the primitive types
+    types:
+        customer_name:
+            type: string
+        customer_address:
+            type: string
+        invoice_id:
+            type: string
+        total_amount:
+            type: float
+        paid:
+            type: boolean
+    ```
+    ```YAML Object Types
+    # Define the object types
+    types:
+        invoice_data:
+            type: object
+            properties: # Incase of object type, must define the properties of the object
+                invoice_id:
+                    type: string # Define the type of the property
+                invoice_date:
+                    type: string # Could nest primitive types within an object
+                invoice_items:
+                    type: array # Could even nest an array within an object
+                    items:
+                        type: object # Could even nest another object within an array
+                        properties:
+                            item:
+                                type: string
+                            category:
+                                type: string
+                            sub_category:
+                                type: string
+                            description:
+                                type: string
+                            price:
+                                type: float
+                            quantity:
+                                type: integer
+    ```
+    ```YAML Array Types
+    # Define the array types
+    types:
+        invoice_items:
+            type: array
+            items: # Array types must define the type of the items in the array
+                type: object # Define the type of the item, could be an object or a primitive type
+                properties:
+                    item:
+                        type: string
+                    description:
+                        type: string
+                    amount:
+                        type: float
+    ```
+    </CodeGroup>
+  </Step>
+  <Step title="Define Your Columns">
+    Columns are the attributes of the dataset. They can be linked to tasks to define the structure of the dataset.
+    <CodeGroup>
+    ```YAML Columns
+    # Define the columns
+    columns:
+        # Define the parsed invoice column
+        parsed_invoice:
+            task_id: invoice_parsing # Associate a task_id with the column
+
+        # Define the customer info column
+        customer_info:
+            task_id: extract_customer_info
+            task_input: [parsed_invoice]
+            # Define the input for the task.
+
+        # Define the invoice items column
+        invoice_items:
+            task_id: extract_invoice_items
+            task_input: [parsed_invoice]
+
+        # Define the invoice qna column
+        invoice_qna:
+            task_id: create_invoice_qna
+            task_input: [invoice_items, customer_info]
+            # Ensures the task is executed after the task_input is available
+    ```
+    </CodeGroup>
+    Think of `task_inputs` as a way to define the order of availability of columns. If a columns requires the output of another columns, it can be defined as a task_input.
+    Internally `task_inputs` are parsed as a directed acyclic graph to ensure the order of execution.
+  </Step>
+  <Step title="Define Your Dataset">
+    Datasets are defined by the metadata, splits, attributes, and shuffle properties.
+    <CodeGroup>
+    ```YAML Dataset
+    # Define the properties of the dataset
+    dataset:
+        # Define the metadata of the dataset
+        metadata:
+            name: Invoice Dataset
+            description: Dataset containing the invoice data
+            tags: [invoice, financial, document]
+            license: CC-BY-NC-SA
+            languages: [en]
+
+        # Define how to shuffle the dataset
+        shuffle:
+            seed: 42
+
+        # Define the splits of the dataset
+        splits:
+            train: 0.8
+            test: 0.2
+            seed: 42
+
+        # Define the attributes of the dataset
+        attributes:
+            required_columns: [invoice_items, customer_info]
+            unique_columns: []
+            flatten_columns: [invoice_items, invoice_qna]
+            exclude_columns: [parsed_invoice]
+            nulls: include
+    ```
+    </CodeGroup>
+  </Step>
+</Steps>

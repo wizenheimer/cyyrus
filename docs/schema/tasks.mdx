@@ -5,7 +5,66 @@ description: Tasks help you generate data. Think of them like recipes for genera
 icon: 'list-check'
 ---
 
+Tasks are the heart of the dataset generation process. They define the steps that will be used to generate the dataset. Tasks can include parsing, extraction, or something else. They are written in YAML and are used to generate synthetic data that adheres to the specified structure.
+
 <img
   src="/images/tasks-overview.png"
   alt="Tasks"
 />
+
+## Task Structure
+
+A task is a YAML object that contains the following fields:
+- `task_id`: The unique identifier for the task.
+- `task_type`: The type of task. It can be `generation`, `parsing`, or any other type.
+- `task_properties`: The properties required for the task. These properties can include the model, prompt, API key, etc.
+
+```YAML Task Structure
+tasks:
+    parse_graphs: # This is called `task_id`
+        task_type: generation # Define the `type` for task
+        task_properties: # Incase the task requires any properties define them here
+            model: gpt-4o-mini
+            prompt: What are the insights from the graph
+            api_key: $OPENAI_API_KEY
+```
+
+## Task Types
+
+Tasks could be one of the following types:
+- `generation`: This type of task is used to generate data using a model.
+- `parsing`: This type of task is used to parse data from a source.
+- `extraction`: This type of task is used to extract columns from a columnar data.
+- `scraping`: This type of task is used to scrape data from a website.
+- `labelling`: This type of task is used assign zero shot labels to data.
+
+At present, Cyyrus supports `generation` and `parsing` tasks. We will be adding support for other task types sometime later.
+
+In case you have a specific task type in mind, reach out and help shape our priorities - we'd love to chat.
+
+## Task Properties
+
+Task properties are the parameters required for the task. These properties can include the model, prompt, API key, etc. The properties are defined in the `task_properties` field of the task object.
+
+<CodeGroup>
+```YAML Parsing Task
+invoice_parsing:
+    task_type: parsing
+    task_properties:
+      directory: experimental/sample
+      file_type: pdf
+      max_depth: 5
+      parsed_format: base64
+```
+```YAML Generation Task
+extract_customer_info:
+    task_type: generation
+    task_properties:
+      model: gpt-4o-mini
+      prompt: Extract customer info from the given invoice
+      response_format: customer_info
+      api_key: $OPENAI_API_KEY
+```
+</CodeGroup>
+
+We have neat documentation for each of the task types. Check them out for more details. 

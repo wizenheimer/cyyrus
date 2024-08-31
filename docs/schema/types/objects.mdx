@@ -3,3 +3,29 @@ title: Object Types
 description: Object types are used to define a collection of key-value pairs. They are the most versatile type in the schema.
 icon: 'boxes-stacked'
 ---
+
+Objects are the Swiss Army knives of the type world. They're the ultimate flex, letting you create your own data structures. Each key is a string, and each value can be any damn type you want. Objects are how you define complex data structures, like entities in your domain model.
+
+They're the entities, the things, the stuff that populates your data universe. Want to create a digital human? Object. A virtual planet? Object. A simulated economy? You guessed it, object.
+
+<CodeGroup>
+```YAML Object Type
+customer_info:
+    type: object
+    properties:
+      customer_name:
+        type: string  # What do we call this meat popsicle?
+      customer_address:
+        type: string  # Where do they park their meat vehicle?
+      invoice_id:
+        type: string  # The unique identifier for their financial pain
+      total_amount:
+        type: float   # How much do they owe us for our digital crack?
+```
+</CodeGroup>
+
+Objects are the most versatile type in the schema. They are used to define a collection of key-value pairs. Each key is a string, and each value can be any type.
+
+Objects are used to define complex data structures and are often used to represent entities in the domain model.
+
+Object types must have a `properties` property set to `object`. The `properties` object contains the key-value pairs that define the object's structure.

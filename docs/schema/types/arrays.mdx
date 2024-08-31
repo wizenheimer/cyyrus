@@ -3,3 +3,25 @@ title: Array Types
 description: Array types are used to define a list of items of a specific type. Nothing more, nothing less.
 icon: 'boxes-stacked'
 ---
+
+Arrays are how you represent hordes of data. A list of products? Array. A catalog of customers? Array. The entire order history of your galactic empire? You bet, that's an array.
+
+<CodeGroup>
+```YAML Array Type
+invoice_qna:
+    type: array
+    items:
+      type: object
+      properties:
+        question:
+          type: string  # The burning questions about their invoice
+        answer:
+          type: string  # Our attempts to explain why they owe us money
+```
+</CodeGroup>
+
+Arrays are used to define a list of items of a specific type. Each item in the array must be of the same type.
+
+Arrays are used to represent collections of items, such as a list of products, a list of customers, or a list of orders.
+
+Array types must have an `items` property. The `items` property defines the type of the items in the array. The `items` property can be any type, including primitive types, object types, or other array types.
