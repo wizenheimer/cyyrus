@@ -1,0 +1,49 @@
+```YAML Parse Invoices
+# schema.yaml
+spec: v0 # Version of the schema
+
+# Define the properties of the dataset
+dataset:
+  # Define the metadata of the dataset
+  metadata:
+    name: Invoice Dataset
+    description: Dataset containing the invoice data
+    tags: [invoice, financial, document]  # Keywords to categorize the dataset
+    license: CC-BY-NC-SA  # Creative Commons Attribution-NonCommercial-ShareAlike license
+    languages: [en]  # Dataset language (English)
+
+  # Define how to shuffle the dataset
+  shuffle:
+    seed: 42  # Random seed for reproducibility
+
+  # Define the splits of the dataset
+  splits:
+    train: 0.8  # 80% of data for training
+    test: 0.2   # 20% of data for testing
+    seed: 42    # Random seed for reproducible splitting
+
+  # Define the attributes of the dataset
+  attributes:
+    required_columns: [parsed_invoice]  # Columns that must be present
+    unique_columns: []  # Columns that should contain unique values (none specified)
+    nulls: include  # Allow null values in the dataset
+
+# Define the tasks that will be used in Dataset generation, and their properties
+tasks:
+  # Define the invoice parsing task
+  invoice_parsing:
+    task_type: parsing
+    task_properties:
+      directory: experimental/sample  # Directory containing invoice files
+      file_type: pdf  # Type of files to parse
+      max_depth: 5  # Maximum depth for directory traversal
+      parsed_format: markdown  # Output format for parsed invoices
+      api_key: $OPENAI_API_KEY  # API key for OpenAI (using environment variable)
+      model: gpt-4o-mini  # AI model to use for parsing
+
+# Define the columns that will be used in the dataset
+columns:
+  # Define the parsed invoice column
+  parsed_invoice:
+    task_id: invoice_parsing  # Links this column to the invoice_parsing task
+```
