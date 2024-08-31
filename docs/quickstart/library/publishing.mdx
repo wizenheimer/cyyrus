@@ -5,3 +5,34 @@ description: Let's make it official. Shall we?
 icon: 'heart'
 ---
 
+## Publishing the Dataset
+
+Okay our data looks fabulous. But why stop there? Let's share your newly created dataset. Cyrus is best buddies with Hugging Face, and it's ready to help you publish your dataset.
+
+```
+Do you want to publish the dataset? [Y/N]: y
+HF TOKEN found in environment. Use 'hf_PT...NFTJu'? [Y/N]: y
+Enter the repository identifier: wizenheimer/invoice-dataset
+Keep the dataset private? [Y/N]: y
+```
+
+Cyrus handles the upload process, creating the necessary formats and uploading to Hugging Face:
+
+```
+2024-08-26 16:05:35,604 - cyrus.composer.core - INFO - Publishing dataset to Hugging Face: wizenheimer/invoice-dataset
+Creating parquet from Arrow format: 100%|████████████████| 1/1 [00:00<00:00, 152.07ba/s]
+Uploading the dataset shards: 100%|███████████████████| 1/1 [00:03<00:00,  3.04s/it]
+Creating parquet from Arrow format: 100%|████████████████| 1/1 [00:00<00:00, 255.36ba/s]
+Uploading the dataset shards: 100%|███████████████████| 1/1 [00:01<00:00,  1.60s/it]
+2024-08-26 16:05:42,223 - cyrus.composer.core - INFO - Dataset successfully published to wizenheimer/invoice-dataset
+2024-08-26 16:05:42,224 - cyrus.cli.main - INFO - Published dataset to None. Happy sharing!
+2024-08-26 16:05:42,224 - cyrus.cli.main - INFO - Dataset published successfully!
+```
+
+And there you have it, folks! your dataset is generated, exported, and published to Hugging Face, ready for use in your machine learning projects!
+
+## Closing Notes
+
+Now, I know what you're thinking - "This is amazing, but it's not exactly breaking the sound barrier." And you're right. Cyrus is still learning to sprint. Right now, it's taking baby steps, processing things one at a time. So generation might be slower than ideal. Asynchronous processing is coming, and when it does, Cyrus will be generating data at the speeds you expect.
+
+Incase this felt awesome, let us know.

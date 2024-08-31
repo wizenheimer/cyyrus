@@ -5,3 +5,80 @@ description: Time to generate some data.
 icon: 'microchip'
 ---
 
+Now comes the exciting part - generating data based on our schema. Before we dive in, let's ensure we have everything set up correctly.
+
+## Environment Setup
+
+Before we dive into the data generation rodeo, we need to make sure our environment variables are in place. You know things like api keys etc ? Yeah, those guys.
+
+We support envs in YAML. Make sure they're all cozied up in your .env file. And don't worry, our schema parser is pretty smart - it can sniff out these variables using the `$VARIABLE_NAME` syntax, like `$OPENAI_API_KEY`
+
+
+## Running the Data Generation
+
+With our schema and environment variables in place, we're ready to generate data. Here's where the rubber meets the road. Open up your terminal, take a deep breath, and type:
+
+```bash
+cyrus run --schema-path path/to/your/schema.yaml --env-path path/to/your/.env
+```
+
+You'll be greeted by a cheeky ASCII art of the Cyyrus - our way of saying, "Buckle up, buttercup, you're in for a wild ride!". As Cyrus revs up, you'll see a flurry of log messages. Don't worry, that's just some of Cyyrus initialization logs:
+
+```
+2024-08-31 18:04:26,280 - cyrus.cli.main - INFO - CLI started. Buckle up, it's going to be a wild wild ride!
+2024-08-31 18:04:26,287 - cyrus.models.spec - INFO - Reading spec from path/to/your/schema.yaml
+2024-08-31 18:04:26,288 - cyrus.models.spec - INFO - Parsing the spec
+2024-08-31 18:04:26,298 - cyrus.models.spec - INFO - Parsed and validated the spec
+2024-08-31 18:04:26,299 - cyrus.cli.main - INFO - Spec loaded. Ready to roll!
+```
+
+## Dry Run
+
+We know you might be a bit nervous about generating a gazillion datapoints right off the bat. So, we'll ask you to preview the execution without actually generating data:
+
+```
+Do you want to perform a dry run? [Y/n]:
+```
+
+A dry run simulates the data generation process, showing you what would happen without actually executing the tasks. This is useful for verifying your schema and catching potential issues early. Think of this as a dress rehearsal.
+
+## Full Run
+
+But let's be honest, you didn't come here to play pretend. So when Cyrus asks:
+
+```
+Do you want to perform a full run? [Y/n]: y
+```
+
+You know what to do. Smash that `y` key and let's get started.
+
+During the full run, Cyrus processes each column defined in your schema, handling dependencies, types, error cases, and one-to-many mappings. The system executes tasks in the order specified, ensuring data integrity and consistency.
+
+You'll see progress bars and logs for each step:
+
+```
+2024-08-26 16:01:14,096 - cyrus.composer.core - INFO - Preparing column: parsed_invoice
+2024-08-26 16:01:14,097 - cyrus.composer.core - INFO - Executing task: TaskType.PARSING
+100%|█████████████████████████████████████████████████| 1/1 [00:08<00:00,  8.09s/it]
+2024-08-26 16:01:22,191 - cyrus.composer.core - INFO - Preparing column: customer_info
+2024-08-26 16:01:22,191 - cyrus.composer.core - INFO - Executing task: TaskType.GENERATION
+100%|█████████████████████████████████████████████████| 11/11 [00:44<00:00,  4.03s/it]
+...
+```
+
+## Exporting the Dataset
+
+But we're not done yet! After generation, you'll have the option to export your dataset:
+
+```
+Ready to export the dataset? [y/N]: y
+Enter the export directory [/Users/Code/cyrus]: export
+Enter the export format (huggingface, json, csv, pickle, parquet) [huggingface]: json
+Enter a name for your dataset (How about: Pierce_Macadamia ?) [Pierce_Macadamia]: invoice
+```
+
+Choose your flavor - JSON, CSV, pickle, parquet - Cyrus has got you covered.
+
+## Next Up
+
+But why stop there? Let's share your newly created dataset. We're in love with `Huggingface` lets make it [official](/quickstart/library/publishing).

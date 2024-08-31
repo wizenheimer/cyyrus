@@ -5,3 +5,148 @@ description: Cyyrus doesn't need a manual, but here's one anyway.
 icon: 'wrench'
 ---
 
+import InvoiceParsing from "/snippets/schema/invoice-parsing.mdx"
+
+
+With Cyyrus, you can configure your schema using a simple YAML file. This might look intimidating. But don't worry, we'll break it down for you. And you'll be a pro in no time.
+
+Here you go.
+
+<InvoiceParsing/>
+
+## Schema Version
+
+```yaml
+spec: v0
+```
+
+We start with the schema version. Currently set to "v0", this allows for future updates and backwards compatibility. As our dataset generation process evolves, we can increment this version number to reflect significant changes. It's like putting a sick flame decal on your dataset - it looks cool AND it's practical!
+
+## Dataset Definition
+
+The `dataset` section is the heart of our schema. It defines the overall structure and properties of our invoice dataset.
+
+### Metadata
+
+```yaml
+metadata:
+  name: Invoice Dataset
+  description: Dataset containing the invoice data
+  tags: [invoice, financial, document]
+  license: CC-BY-NC-SA
+  languages: [en]
+```
+
+This subsection provides essential information about our dataset:
+
+- We've named it "Invoice Dataset" and provided a brief description.
+- Tags help categorize the dataset, making it easier to find and understand its content.
+- The license (Creative Commons Attribution-NonCommercial-ShareAlike) that says "Share the love, but don't you dare make money off my hard work! Quite fair."
+- We've specified that the dataset is in English. Because that's all we know :D
+
+### Shuffling
+
+```yaml
+shuffle:
+  seed: 42
+```
+
+Next is data shuffling, think of it like shuffling your data like it's a deck of cards in Vegas. By setting a seed (in this case, 42), we ensure that our shuffling is reproducible. This means anyone using this schema will get the same randomized order, which is essential for replicability in research and development.
+
+### Dataset Splits
+
+```yaml
+splits:
+  train: 0.8
+  test: 0.2
+  seed: 42
+```
+
+Here, we define how to split our dataset:
+
+- 80% of the data will be used for training.
+- 20% will be reserved for testing.
+- We use another seed (also 42) to ensure reproducible splitting.
+
+This split allows us to train models on a majority of the data while keeping a separate portion for unbiased evaluation.
+
+### Dataset Attributes
+
+```yaml
+attributes:
+  required_columns: [parsed_invoice]
+  unique_columns: []
+  nulls: include
+```
+
+This subsection defines key attributes of our dataset:
+
+- The `parsed_invoice` column is required in every record.
+- We haven't specified any columns that must contain unique values.
+- We're allowing null values in the dataset, which might be useful for handling missing data.
+
+Simply put here we look our data and say "come as you are"
+
+## Task Definition
+
+```yaml
+tasks:
+  invoice_parsing:
+    task_type: parsing
+    task_properties:
+      directory: experimental/sample
+      file_type: pdf
+      max_depth: 5
+      parsed_format: markdown
+      api_key: $OPENAI_API_KEY
+      model: gpt-4o-mini
+```
+
+This section defines the core task for generating our dataset: invoice parsing. Let's break down the properties:
+
+- We'll be parsing PDF files from the `experimental/sample` directory.
+- The parser will traverse directories up to a depth of 5.
+- Parsed invoices will be output in Markdown format.
+- We're using an OpenAI API key (stored in an environment variable for security) and the GPT-4O-mini model for parsing.
+
+This task will process our raw invoice PDFs and convert them into structured data for our dataset.
+
+We have got a lot of these. Each with plenty of options.
+
+1. `Parsing` - Unf*ck unstructured data. Nothing more, nothing less.
+2. `Generation` - Tap into latent space of Language Models to generate data. And more.
+3. `Extraction` - Seed your data from an existing dataset. Be it a CSV, JSON, or a something else.
+4. `Labelling` - Got bunch of images? Tag 'em all!
+5. `Scraping` - Got an unusable URL? Scrape it like you mean it.
+
+## Column Definition
+
+```yaml
+columns:
+  parsed_invoice:
+    task_id: invoice_parsing
+```
+
+Last but not least, we're tying it all together with our column definition. In this case, we have a single column:
+
+- `parsed_invoice`: This column will contain the output from our invoice parsing task.
+
+By linking the column to the task ID, we set a clear connection between the data generation process and the resulting dataset structure.
+
+## Conclusion
+
+And there you have it, folks! This YAML schema hands a blueprint for generating an invoice dataset. It's got everything you need to generate, process, and structure your data from high-level metadata to specific parsing tasks and output format.
+
+Feeling brave? We have a few more spins to the current schema. We've got the blueprint. Now lets crunch [data](/quickstart/library/generation).
+
+import ExtractCustomerInfo from "/snippets/schema/invoice-extract-customer-info.mdx"
+import ExtractInvoiceItems from "/snippets/schema/invoice-extract-invoice-items.mdx"
+import EnrichCustomerInfo from "/snippets/schema/invoice-enrich-existing-info.mdx"
+
+<CodeGroup>
+<ExtractCustomerInfo/>
+<ExtractInvoiceItems/>
+<EnrichCustomerInfo/>
+</CodeGroup>
+
+Alright, enough with the scrolling. The data's ready to generate itself, but someone's gotta hit the start button. Lets get [started](/quickstart/library/generation).
