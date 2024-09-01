@@ -11,7 +11,7 @@ logger = get_logger(__name__)
 
 class ExportFormat(str, Enum):
     HUGGINGFACE = "huggingface"
-    JSON = "json"
+    JSON = "jsonl"
     CSV = "csv"
     PICKLE = "pickle"
     PARQUET = "parquet"
