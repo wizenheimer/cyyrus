@@ -33,6 +33,25 @@ We've put together a neat documentation. Check them [out](https://cyyrus.com/int
 
 We built Cyyrus so that it doesn’t need a manual to operate, but here’s one anyway. Let's get you upto speed. You'd be a pro in no time.
 
+<details>
+
+<summary>grug dev express lane</summary>
+
+<br>
+We get it. This is cool. But Writing SCHEMA? Manually? In 2024? Bruh, are you serious?
+
+You know what's fun? Literally anything else. You know what's not? Staring at a CLI, questioning your life choices as you painstakingly create yet another YAML file.
+
+So here's the deal: We made a notebook that does the heavy lifting for you. Why? Because we're not sadists, and you're not a masochist (we hope).
+
+Incase we got your hopes high, spoiler alert, this isn't perfect. But gives you a great start. We have custom components. You'd need to know which buttons to smash, and you're golden. Hell, we even made guides for the button-smashing part.
+
+[![Schema Cookbook](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/18qYnYKPHiCWRqH92bzpNujJoC4dYqWS-?usp=sharing)
+
+The notebook is so good, you might actually enjoy creating schemas. (Don't worry, we won't tell anyone.) Go ahead. Click it. Or stick around for the rest of the quickstart.
+
+</details>
+
 ### Installation
 
 Alright, baby steps. Install Cyyrus with `pip`:
