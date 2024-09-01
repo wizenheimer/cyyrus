@@ -35,7 +35,7 @@ We built Cyyrus so that it doesn’t need a manual to operate, but here’s one 
 
 <details>
 
-<summary>grug dev express lane</summary>
+<summary>easter egg</summary>
 
 <br>
 We get it. This is cool. But Writing SCHEMA? Manually? In 2024? Bruh, are you serious?
@@ -228,6 +228,30 @@ And there you have it, folks! your dataset is generated, exported, and published
 ## Documentation
 
 We've put together a neat documentation. Check out [docs](https://cyyrus.com/introduction).
+
+Additionally `example` directory contains schema examples, sample datasets generated using cyyrus and even a Jupyter notebook to help you get started with Cyyrus.
+
+### Directory Structure
+```
+examples
+├── README.md
+├── notebook
+│   └── schema_cookbook.ipynb
+└── schema
+    ├── graph_parsing.yaml
+    ├── invoice_parsing.yaml
+    ├── movie_review.yaml
+    └── ocr_free_markdown.yaml
+```
+### Notebook
+
+- `notebook/schema_cookbook.ipynb`: Notebook for creating and configuring schemas for Cyyrus. Or try out [![Schema Cookbook](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/18qYnYKPHiCWRqH92bzpNujJoC4dYqWS-?usp=sharing)
+
+### Schema Examples
+
+- `schema/extract_info_from_invoice.yaml`: Example schema for extracting customer data, invoice data from invoices and synthesizing new data.
+- `schema/generate_product_review.yaml`: Schema setup for generating and rating product reviews.
+- `schema/annual_report_to_markdown.yaml`: Example schema for converting Annual report to Markdown without using OCR.
 
 ## Feedback
 
