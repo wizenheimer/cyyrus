@@ -1,3 +1,3 @@
 # package/python/cyyrus/__version__.py
 
-__version__ = "0.13.0"
+__version__ = "0.14.0"
