@@ -4,9 +4,9 @@ spec: v0 # Version of the schema
 dataset:
   # Define the metadata of the dataset
   metadata:
-    name: Movie Review # Name of the dataset
-    description: Dataset for sentiment analysis # Description of the dataset
-    tags: [graphs, insights] # Tags of the dataset
+    name: Product Review # Name of the dataset
+    description: Dataset for product review analysis # Description of the dataset
+    tags: [review, product] # Tags of the dataset
     license: CC-BY-NC-SA # License of the dataset
     language: en # Language of the dataset
 
@@ -49,7 +49,6 @@ tasks:
       prompt: What is the sentiment of the review? Positive or Negative?
       api_key: $OPENAI_API_KEY
       response_format: sentiment
-      flatten: true
 
 # Define the columns that will be used in the dataset
 columns:

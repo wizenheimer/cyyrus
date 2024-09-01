@@ -24,10 +24,9 @@ examples
 
 ### Schema Examples
 
-- `schema/graph_parsing.yaml`: Example schema for extracting insights from graph.
-- `schema/invoice_parsing.yaml`: Example schema for extracting customer data, invoice data from invoices and synthesizing new data.
-- `schema/movie_review.yaml`: Schema setup for generating and rating movie reviews.
-- `schema/ocr_free_markdown.yaml`: Example schema for converting PDF to Markdown without using OCR.
+- `schema/extract_info_from_invoice.yaml`: Example schema for extracting customer data, invoice data from invoices and synthesizing new data.
+- `schema/generate_product_review.yaml`: Schema setup for generating and rating product reviews.
+- `schema/annual_report_to_markdown.yaml`: Example schema for converting Annual report to Markdown without using OCR.
 
 ## Getting Started
 
