@@ -1,4 +1,4 @@
-![Cyyrus Header](docs/images/header.png)
+![Cyyrus Header](docs/images/banner-with-subtext.png)
 
 🚧🚨 Please note that Cyyrus is currently in active development as we prepare for its public release 🚧🚨
 
@@ -6,15 +6,28 @@
 World has plenty of data, but most of it is trapped in formats that are difficult to utilize. We’re talking about messy relational databases, unstructured text, audio, video, even the latent space of LLMs. It's not a goldmine; it's a landfill. And we're spending millions trying to clean it up.
 
 ## Introducting Cyyrus
-DataOps today looks a mix of `ClickOps`, `CryOps` and `PrayOps`. What if it didn't had to?
 
-`Cyyrus` aims to do for datasets, what `Terraform` did for Infrastructure.
+![Cyyrus Introduction](docs/images/banner-with-plugs.png)
 
-Cyyrus does't make assumptions about your data because we don't have to. It handles it all, in all its messy, unstructured glory.
+DataOps today looks a mix of `ClickOps`, `CryOps` and `PrayOps`. You're either clicking your life away, crying over broken pipelines, or praying your dataset doesn't implode. Fun times, right?
 
-Sure but doesn't X do this already? The market is saturated with products but these tools don't solve data silos; they create new ones.
+`Cyyrus` aims to do for datasets, what `Terraform` did for Infrastructure. It transforms unstructured data into usable datasets.
 
-Cyyrus doesn't bundle an analytics product, it charges for transformations and checkpoints, not data storage so it benefits with data movement.
+| Task | Description | Status | Future Work |
+|------|-------------|--------|-------------|
+| Parsing | Parse unstructured data sources (PDF, images) | Beta | Add support for more document types, audio, and video |
+| Generation | Generate data using Language Models | Added OpenAI integration | Implement deterministic and rule-based generators |
+| Extraction | Seed data from existing datasets (CSV, JSON, etc.) | In development | Coming Soon |
+| Scraping | Collect and seed data from web sources | In development | Coming Soon |
+| Labelling | Enrich image datasets for detection, classification, and segmentation | To Be Determined | Coming Soon |
+
+Cyyrus does't make assumptions about your data because it doesn't have to. It handles it all. You can create datasets by composing these tasks into one another, enabling declarative dataset generation pipelines. Think of them like `Lego` bricks.
+
+Sure but doesn't X do this already? Yeah, maybe. The market is saturated with products like these but these tools don't solve data silos; they create new ones.
+
+Cyyrus doesn't bundle an analytics product, it plans to charge for transformations and checkpoints, not data storage so it benefits with data movement. Put simply, the more your data moves, the happier we are. Not the other way round.
+
+We've put together a neat documentation. Check them [out](https://cyyrus.com/introduction) (Shoutout to our hyper-cafinated devs prompting cursor day in and out :D).
 
 ## Quick Start
 
