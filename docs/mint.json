@@ -243,8 +243,8 @@
         "linkedin": "https://www.linkedin.com/in/0xnayan"
     },
     "analytics": {
-        "gtm": {
-            "tagId": "GTM-THWGX248"
+        "ga4": {
+            "measurementId": "G-0JVNVEDW5M"
         }
     }
 }
