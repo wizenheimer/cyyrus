@@ -1,0 +1,59 @@
+spec: v0 # Version of the schema
+
+# Define the properties of the dataset
+dataset:
+  # Define the metadata of the dataset
+  metadata:
+    name: Convert FunSD LayoutLMv3 to Markdown
+    description: This dataset contains processed sample of FunSD LayoutLMv3 dataset. Find the original dataset at https://huggingface.co/datasets/nielsr/funsd-layoutlmv3
+    tags: [markdown, document, doclaynet, benchmark, gpt-4o-mini]
+    license: MIT
+    languages: [en]
+
+  # Define how to shuffle the dataset
+  shuffle:
+    seed: 42
+
+  # Define the splits of the dataset
+  splits:
+    train: 0.8
+    test: 0.2
+    seed: 42
+
+  # Define the attributes of the dataset
+  attributes:
+    required_columns: []
+    unique_columns: []
+    flatten_columns: []
+    exclude_columns: []
+    nulls: include
+
+# Define the tasks that will be used in Dataset generation, and their properties
+tasks:
+  # Define the document parsing task. This task will parse the PDF documents and return the base64 encoded content.
+  image_parsing:
+    task_type: parsing
+    task_properties:
+      directory: examples/datasets/funsd_layoutlmv3
+      file_type: png
+      max_depth: 5
+      parsed_format: base64
+
+  # Define the markdown extraction task. This task will extract the markdown content from the above parsed PDF documents.
+  extract_markdown:
+    task_type: generation
+    task_properties:
+      model: gpt-4o-mini
+      prompt: Convert the following PDF page to markdown. Return only the markdown with no explanation text. Do not include deliminators like '''markdown. You must include all information on the page. Do not exclude headers, footers, or subtext.
+      api_key: $OPENAI_API_KEY
+
+# Define the columns that will be used in the dataset. Associate the columns with the tasks here.
+columns:
+  # Define the parsed document column
+  images:
+    task_id: image_parsing
+
+  # Define the extracted markdown column
+  text:
+    task_id: extract_markdown
+    task_input: [images]

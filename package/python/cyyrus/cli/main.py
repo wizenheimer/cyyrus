@@ -159,27 +159,31 @@ def run(
     )
 
     # ============================
+    #      Publish the dataset
+    # ============================
+    if publish_dataset(
+        composer=composer,
+        huggingface_token=huggingface_token,
+        repo_id=repo_id,
+        logger=logger,
+    ):
+        logger.info("Dataset published successfully! Happy sharing!")
+    else:
+        logger.info("Dataset publishing skipped. Moving on!")
+
+    # ============================
     #      Export the dataset
     # ============================
+
     if export_dataset(
         composer=composer,
         export_path=export_path,
         export_format=export_format,
         logger=logger,
     ):
-        if publish_dataset(
-            composer=composer,
-            huggingface_token=huggingface_token,
-            repo_id=repo_id,
-            logger=logger,
-            export_path=export_path,
-            export_format=export_format,
-        ):
-            logger.info("Dataset published successfully!")
-        else:
-            logger.info("Dataset publishing skipped or failed.")
+        logger.info("Dataset exported successfully! It's all yours now!")
     else:
-        logger.info("Dataset export skipped.")
+        logger.info("Dataset export skipped. That's cool too!")
 
 
 def configure_hf():
@@ -246,6 +250,9 @@ def export_dataset(
             ):
                 logger.info("Skipping export. Moving on!")
                 return False
+            else:
+                export_format = None
+                export_path = None
 
 
 def prompt_export_details(export_path, export_format):
@@ -275,8 +282,6 @@ def prompt_export_details(export_path, export_format):
 def publish_dataset(
     composer: Composer,
     logger: logging.Logger,
-    export_path: Path,
-    export_format: ExportFormat,
     huggingface_token: Optional[str] = None,
     repo_id: Optional[str] = None,
 ):
@@ -310,16 +315,7 @@ def publish_dataset(
                 return True
             except Exception as e:
                 logger.error(f"Publishing failed again due to: {str(e)}")
-                return (
-                    export_dataset(
-                        composer=composer,
-                        logger=logger,
-                        export_format=export_format,
-                        export_path=export_path,
-                    )
-                    if click.confirm("Do you want to export the dataset locally instead?")
-                    else False
-                )
+                return False
         return False
 
 

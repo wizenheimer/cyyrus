@@ -1,0 +1,59 @@
+spec: v0 # Version of the schema
+
+# Define the properties of the dataset
+dataset:
+  # Define the metadata of the dataset
+  metadata:
+    name: Annual Report to Markdown
+    description: Convert Annual Reports to Markdown using GPT-4o-mini
+    tags: [markdown, document]
+    license: CC-BY-NC-SA
+    languages: [en]
+
+  # Define how to shuffle the dataset
+  shuffle:
+    seed: 42
+
+  # Define the splits of the dataset
+  splits:
+    train: 0.8
+    test: 0.2
+    seed: 42
+
+  # Define the attributes of the dataset
+  attributes:
+    required_columns: []
+    unique_columns: []
+    flatten_columns: []
+    exclude_columns: []
+    nulls: include
+
+# Define the tasks that will be used in Dataset generation, and their properties
+tasks:
+  # Define the document parsing task. This task will parse the PDF documents and return the base64 encoded content.
+  document_parsing:
+    task_type: parsing
+    task_properties:
+      directory: experimental/sample/annual_report
+      file_type: pdf
+      max_depth: 5
+      parsed_format: base64
+
+  # Define the markdown extraction task. This task will extract the markdown content from the above parsed PDF documents.
+  extract_markdown:
+    task_type: generation
+    task_properties:
+      model: gpt-4o-mini
+      prompt: Convert the following PDF page to markdown. Return only the markdown with no explanation text. Do not include deliminators like '''markdown. You must include all information on the page. Do not exclude headers, footers, or subtext.
+      api_key: $OPENAI_API_KEY
+
+# Define the columns that will be used in the dataset. Associate the columns with the tasks here.
+columns:
+  # Define the parsed document column
+  parsed_document:
+    task_id: document_parsing
+
+  # Define the extracted markdown column
+  markdown_content:
+    task_id: extract_markdown
+    task_input: [parsed_document]

@@ -1,0 +1,127 @@
+spec: v0 # Version of the schema
+
+# Define the properties of the dataset
+dataset:
+  # Define the metadata of the dataset
+  metadata:
+    name: Resume Dataset
+    description: Dataset containing the parsed resume data. The dataset contains information about the candidate's personal details, work experience, education, and skills. Original dataset could be found at https://huggingface.co/datasets/Kunling/layoutlm_resume_data/viewer/funsd/train?p=1
+    tags: [resume, gpt-4o-mini, dataset]
+    license: MIT
+    languages: [en]
+
+  # Define how to shuffle the dataset
+  shuffle:
+    seed: 42
+
+  # Define the splits of the dataset
+  splits:
+    train: 0.8
+    test: 0.2
+    seed: 42
+
+  # Define the attributes of the dataset
+  attributes:
+    required_columns: []
+    unique_columns: []
+    flatten_columns: []
+    exclude_columns: []
+    nulls: include
+
+# Define the types that will be used in the dataset
+types:
+  # Define the candidate info
+  candidate_info:
+    type: object
+    properties:
+      candidate_name:
+        type: string
+      candidate_phone:
+        type: string
+      candidate_address:
+        type: string
+
+  # Define the candidate experience
+  candidate_experience:
+    type: array
+    items:
+      type: object
+      properties:
+        work_duration:
+          type: string
+        company_name:
+          type: string
+        job_title:
+          type: string
+        role_summary:
+          type: string
+
+  # Define the resume questions and answers
+  resume_questions:
+    type: array
+    items:
+      type: object
+      properties:
+        question:
+          type: string
+        answer:
+          type: string
+
+# Define the tasks that will be used in Dataset generation, and their properties
+tasks:
+  # Define the invoice parsing task. This task will parse the invoice data and return the base64 encoded content.
+  resume_parsing:
+    task_type: parsing
+    task_properties:
+      directory: examples/datasets/layoutlm_resume_data
+      file_type: png
+      max_depth: 5
+      parsed_format: base64
+
+  # Define the customer info extraction task. This task will extract the customer info from the invoice items.
+  extract_candidate_info:
+    task_type: generation
+    task_properties:
+      model: gpt-4o-mini
+      prompt: Extract candidate information from the given resume. Make sure to include all the details. Incase of missing information, use N/A.
+      response_format: candidate_info
+      api_key: $OPENAI_API_KEY
+
+  # Define the customer experience extraction task. This task will extract the candidate experience from the resume.
+  extract_candidate_experience:
+    task_type: generation
+    task_properties:
+      model: gpt-4o-mini
+      prompt: Extract candidate experience from the given resume. Make sure to include all the details. Incase of missing information, use N/A.
+      response_format: invoice_items
+      api_key: $OPENAI_API_KEY
+
+  # Define the invoice qna creation task. This task will generate questions and answers from the invoice items.
+  generate_resume_qna:
+    task_type: generation
+    task_properties:
+      model: gpt-4o-mini
+      prompt: Generate questions and answers from the given resume. Incase of subjective questions, use N/A for answers.
+      response_format: invoice_qna
+      api_key: $OPENAI_API_KEY
+
+# Define the columns that will be used in the dataset
+columns:
+  # Define the parsed resume column. This column will contain the parsed resume data as base64 encoded content.
+  parsed_resume:
+    task_id: resume_parsing
+
+  # Define the extracted candidate info column. This column will contain the extracted candidate info.
+  candidate_info:
+    task_id: extract_candidate_info
+    task_input: [parsed_resume]
+
+  # Define the extracted candidate experience column. This column will contain the extracted candidate experience.
+  candidate_experience:
+    task_id: extract_candidate_experience
+    task_input: [parsed_resume]
+
+  # Define the resume qna column. This column will contain the questions and answers generated from the resume.
+  resume_qna:
+    task_id: generate_resume_qna
+    task_input: [candidate_info, candidate_experience]
