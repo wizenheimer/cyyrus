@@ -241,5 +241,10 @@
     "footerSocials": {
         "github": "https://github.com/wizenheimer",
         "linkedin": "https://www.linkedin.com/in/0xnayan"
+    },
+    "analytics": {
+        "gtm": {
+            "tagId": "GTM-THWGX248"
+        }
     }
 }
