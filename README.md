@@ -33,25 +33,6 @@ We've put together a neat documentation. Check them [out](https://cyyrus.com/int
 
 We built Cyyrus so that it doesn’t need a manual to operate, but here’s one anyway. Let's get you upto speed. You'd be a pro in no time.
 
-<details>
-
-<summary>easter egg</summary>
-
-<br>
-We get it. This is cool. But Writing SCHEMA? Manually? In 2024? Bruh, are you serious?
-
-You know what's fun? Literally anything else. You know what's not? Staring at a CLI, questioning your life choices as you painstakingly create yet another YAML file.
-
-So here's the deal: We made a notebook that does the heavy lifting for you. Why? Because we're not sadists, and you're not a masochist (we hope).
-
-Incase we got your hopes high, spoiler alert, this isn't perfect. But gives you a great start. We have custom components. You'd need to know which buttons to smash, and you're golden. Hell, we even made guides for the button-smashing part.
-
-[![Schema Cookbook](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/18qYnYKPHiCWRqH92bzpNujJoC4dYqWS-?usp=sharing)
-
-The notebook is so good, you might actually enjoy creating schemas. (Don't worry, we won't tell anyone.) Go ahead. Click it. Or stick around for the rest of the quickstart.
-
-</details>
-
 ### Installation
 
 Alright, baby steps. Install Cyyrus with `pip`:
@@ -235,23 +216,59 @@ Additionally `example` directory contains schema examples, sample datasets gener
 ```
 examples
 ├── README.md
+├── exports
+│   ├── doclaynet_bench
+│   │   └── result.jsonl
+│   ├── funsd_layoutlmv3
+│   │   └── result.jsonl
+│   ├── invoices_receipts_ocr_v1
+│   │   └── result.jsonl
+│   └── layoutlm_resume_data
+│       └── result.jsonl
 ├── notebook
-│   └── schema_cookbook.ipynb
+│   └── schema_cookbook.ipynb
 └── schema
+    ├── annual_report_to_markdown.yaml
+    ├── doclaynet_bench.yaml
+    ├── extract_info_from_invoice.yaml
+    ├── funsd_layoutlmv3.yaml
+    ├── generate_product_review.yaml
     ├── graph_parsing.yaml
-    ├── invoice_parsing.yaml
-    ├── movie_review.yaml
-    └── ocr_free_markdown.yaml
+    ├── invoices_receipts_ocr_v1.yaml
+    └── layoutlm_resume_data.yaml
 ```
-### Notebook
-
-- `notebook/schema_cookbook.ipynb`: Notebook for creating and configuring schemas for Cyyrus. Or try out [![Schema Cookbook](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/18qYnYKPHiCWRqH92bzpNujJoC4dYqWS-?usp=sharing)
-
 ### Schema Examples
 
-- `schema/extract_info_from_invoice.yaml`: Example schema for extracting customer data, invoice data from invoices and synthesizing new data.
-- `schema/generate_product_review.yaml`: Schema setup for generating and rating product reviews.
 - `schema/annual_report_to_markdown.yaml`: Example schema for converting Annual report to Markdown without using OCR.
+- `schema/doclaynet_bench`: Example schema to convert a sample of DoclayNet [dataset](https://huggingface.co/datasets/vikp/doclaynet_bench) to Markdown
+- `schema/extract_info_from_invoice.yaml`: Example schema for extracting customer data, invoice data from invoices and synthesizing new data from PDF invoices
+- `schema/funsd_layoutlmv3.yaml`: Example schema to process a sample of FunSD LayoutLMv3 [dataset](https://huggingface.co/datasets/nielsr/funsd-layoutlmv3)
+- `schema/generate_product_review.yaml`: Schema setup for generating and rating product reviews.
+- `schema/graph_parsing.yaml`: Example schema for extracting insights from static graphs
+- `schema/invoices_receipts_ocr_v1.yaml`: Example schema for processing invoices and receipts sampled from huggingface [dataset](https://huggingface.co/datasets/mychen76/invoices-and-receipts_ocr_v1).
+- `schema/layoutlm_resume_data.yaml`: Example schema for parsing candidates info and experience from resumes sample from huggingface [dataset](https://huggingface.co/datasets/Kunling/layoutlm_resume_data/viewer/funsd/train?p=1).
+
+### Exported Datasets
+
+- `exports/doclaynet_bench/result.json`: This `jsonl` contains processed sample of [DoclayNet](https://huggingface.co/datasets/Kunling/layoutlm_resume_data/viewer/funsd/train?p=1) Benchmark dataset extracted using Cyyrus CLI.
+- `exports/funsd_layoutlmv3/result.json`: This `jsonl` contains processed sample of FunSD LayoutLMv3 [dataset](https://huggingface.co/datasets/nielsr/funsd-layoutlmv3) generated using Cyyrus CLI.
+- `exports/invoices_receipts_ocr_v1/result.json`: The `jsonl` contains information about the invoice items, customer information, and invoice questions and answers extracted from invoices-and-receipts [dataset](https://huggingface.co/datasets/mychen76/invoices-and-receipts_ocr_v1) using Cyyrus CLI.
+- `exports/layoutlm_resume_data/result.json`: The `jsonl` contains information about the candidate's personal details, work experience, education, and skills extracted from [layoutlm_resume_dataset](https://huggingface.co/datasets/Kunling/layoutlm_resume_data/viewer/funsd/train?p=1) using Cyyrus CLI.
+
+## Notebook
+
+We get it. Cyyrus is cool and all. But Writing SCHEMA? Manually? In 2024? Bruh, are you serious?
+
+You know what's fun? Literally anything else.
+You know what's not? Staring at a CLI, questioning your life choices as you painstakingly create yet another YAML file.
+
+So here's the thing: We made a notebook that does the heavy lifting for you. Why? Because we're not sadists, and you're not a masochist (we hope).
+
+Incase we got your hopes high, spoiler alert, this isn't perfect. But gives you a great start. We have custom components. You'd need to know which buttons to smash, and you're golden. Hell, we even made guides for the button-smashing part.
+
+[![Schema Cookbook](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/18qYnYKPHiCWRqH92bzpNujJoC4dYqWS-?usp=sharing)
+
+The notebook is so good, you might actually enjoy creating schemas. (Don't worry, we won't tell anyone.) Go ahead. Click it. But this isn't ideal, we are working on getting a neat UI up. Stay tuned!
 
 ## Feedback
 
