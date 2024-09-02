@@ -1,0 +1,106 @@
+spec: v0 # Version of the schema
+
+# Define the properties of the dataset
+dataset:
+  # Define the metadata of the dataset
+  metadata:
+    name: Invoice Dataset
+    description: Dataset containing processed invoices and receipts. The dataset contains information about the invoice items, customer information, and invoice questions and answers. The original dataset could be found at https://huggingface.co/datasets/mychen76/invoices-and-receipts_ocr_v1
+    tags: [invoice, financial, document]
+    license: MIT
+    languages: [en]
+
+  # Define how to shuffle the dataset
+  shuffle:
+    seed: 42
+
+  # Define the splits of the dataset
+  splits:
+    train: 0.8
+    test: 0.2
+    seed: 42
+
+  # Define the attributes of the dataset
+  attributes:
+    required_columns: []
+    unique_columns: []
+    flatten_columns: []
+    exclude_columns: []
+    nulls: include
+
+# Define the types that will be used in the dataset
+types:
+  # Define the invoice info
+  invoice_info:
+    type: object
+    properties:
+      invoice_number:
+        type: string
+      invoice_date:
+        type: string
+      customer_name:
+        type: string
+      customer_address:
+        type: string
+      seller_name:
+        type: string
+      seller_address:
+        type: string
+      total_amount:
+        type: float
+
+  # Define the invoice items
+  invoice_items:
+    type: array
+    items:
+      type: object
+      properties:
+        item:
+          type: string
+        amount:
+          type: float
+
+# Define the tasks that will be used in Dataset generation, and their properties
+tasks:
+  # Define the invoice parsing task
+  invoice_parsing:
+    task_type: parsing
+    task_properties:
+      directory: examples/datasets/invoices_receipts_ocr_v1
+      file_type: png
+      max_depth: 5
+      parsed_format: base64
+
+  # Define the invoice info extraction task. This task will extract the invoice information from the parsed invoice. This task will be used to extract the customer information, seller information, and other invoice details.
+  extract_invoice_info:
+    task_type: generation
+    task_properties:
+      model: gpt-4o-mini
+      prompt: Extract info from the given invoice. Make sure to include all the details. Incase of missing information, use N/A.
+      response_format: invoice_info
+      api_key: $OPENAI_API_KEY
+
+  # Define the invoice items extraction task. This task will extract the invoice items from the parsed invoice. This task will be used to extract the items, their quantities, and prices.
+  extract_invoice_items:
+    task_type: generation
+    task_properties:
+      model: gpt-4o-mini
+      prompt: Extract invoice items from the given table
+      response_format: invoice_items
+      api_key: $OPENAI_API_KEY
+
+# Define the columns that will be used in the dataset
+columns:
+  # Define the parsed invoice column
+  parsed_invoice:
+    task_id: invoice_parsing
+
+  # Define the invoice info column. This column will contain the extracted invoice information.
+  invoice_info:
+    task_id: extract_invoice_info
+    task_input: [parsed_invoice]
+
+  # Define the invoice items column. This column will contain the extracted invoice items.
+  invoice_items:
+    task_id: extract_invoice_items
+    task_input: [parsed_invoice]
