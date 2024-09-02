@@ -303,3 +303,5 @@ Cyyrus plans to introduce components which makes existing tools "data-ready". Th
 Created by engineers who have an irrational belief that data transformation doesn't need to be a clusterfuck as it is today.
 
 Terraform made infrastructure sexy. They believe a tool like Cyyrus can make data transformation sexy as well. With their half built, barely functional MVP, they're curious if they can make others believe as well.
+
+[Nayan Kumar](https://github.com/wizenheimer) and [Shreyansh Malviya](https://github.com/shreyanshmalvya) 
