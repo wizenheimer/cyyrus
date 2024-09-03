@@ -2,6 +2,10 @@
 
 This directory contains schema examples and a Jupyter notebook to help you get started with Cyyrus.
 
+
+https://github.com/user-attachments/assets/f338cd80-497e-497f-9b6e-c87b3ae7b12d
+
+
 ## Directory Structure
 
 ```
